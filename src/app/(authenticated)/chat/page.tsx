@@ -14,7 +14,8 @@ import {
   Tag as TagIcon,
   Calendar as CalendarIcon,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Package
 } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 
@@ -40,6 +41,7 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [company, setCompany] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
+  const [pendingTransaction, setPendingTransaction] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,7 +83,6 @@ export default function ChatPage() {
     const lowerText = text.toLowerCase();
     
     // 1. Better Amount Detection
-    // Look for numbers with currency/price indicators first
     const pricePatterns = [
       /(?:at|for|rs|npr|usd|inr|@)\s*(\d+(?:\.\d+)?)/i,
       /(\d+(?:\.\d+)?)\s*(?:rs|npr|usd|inr)/i,
@@ -89,34 +90,44 @@ export default function ChatPage() {
     ];
 
     let foundAmount = 0;
+    let amountIndex = -1;
     for (const pattern of pricePatterns) {
       const match = text.match(pattern);
       if (match && match[1]) {
         foundAmount = parseFloat(match[1]);
+        amountIndex = match.index || -1;
         break;
       }
     }
 
-    // If no explicit price indicator, look for all numbers
-    if (foundAmount === 0) {
-      const allNumbers = text.match(/\d+(?:\.\d+)?/g);
-      if (allNumbers) {
-        // If there's only one number, it's likely the amount
-        if (allNumbers.length === 1) {
-          foundAmount = parseFloat(allNumbers[0]);
-        } else {
-          // If multiple numbers, use heuristics
-          // Heuristic: The largest number is usually the amount (prevents quantity mixups like "2 burgers for 500")
-          const numbers = allNumbers.map(n => parseFloat(n));
-          foundAmount = Math.max(...numbers);
-          
-          // Exception: Check if a number is very small and followed by an item name (basic quantity check)
-          // But Max usually works well for simple "X items for Y money"
-        }
+    // 2. Quantity Detection
+    let foundQuantity = 1;
+    const allNumbersMatch = Array.from(text.matchAll(/\d+(?:\.\d+)?/g));
+    
+    if (allNumbersMatch.length > 1) {
+      // Find a number that is NOT the foundAmount
+      for (const match of allNumbersMatch) {
+         const val = parseFloat(match[0]);
+         if (val !== foundAmount) {
+            foundQuantity = val;
+            break;
+         }
       }
+    } else if (allNumbersMatch.length === 1 && foundAmount === 0) {
+      // If only one number and no price indicator, it might be the amount OR quantity
+      // Heuristic: if it's very large, it's likely amount. If it's small (< 10) it might be quantity, but amount is safer to assume.
+      // Default to amount for single numbers.
+      foundAmount = parseFloat(allNumbersMatch[0][0]);
     }
 
-    // 2. Type Detection
+    // If still multiple numbers and no foundAmount, assume largest is amount, others are quantity
+    if (foundAmount === 0 && allNumbersMatch.length > 1) {
+       const numbers = allNumbersMatch.map(m => parseFloat(m[0]));
+       foundAmount = Math.max(...numbers);
+       foundQuantity = Math.min(...numbers);
+    }
+
+    // 3. Type Detection
     let type: 'income' | 'expense' = 'expense';
     if (
       lowerText.includes('received') || 
@@ -131,7 +142,7 @@ export default function ChatPage() {
       type = 'income';
     }
 
-    // 3. Smart Date Detection
+    // 4. Smart Date Detection
     let date = format(new Date(), 'yyyy-MM-dd');
     const now = new Date();
     
@@ -145,7 +156,7 @@ export default function ChatPage() {
       date = format(subDays(now, 7), 'yyyy-MM-dd');
     }
 
-    // 4. Category Matching
+    // 5. Category Matching
     let category = categories.find(c => 
       lowerText.includes(c.name.toLowerCase())
     );
@@ -153,7 +164,7 @@ export default function ChatPage() {
     if (!category) {
       const keywordMap: Record<string, string> = {
         'taxi': 'Travel', 'bus': 'Travel', 'fuel': 'Travel', 'petrol': 'Travel', 'ride': 'Travel', 'uber': 'Travel', 'pathao': 'Travel',
-        'food': 'Meals', 'dinner': 'Meals', 'lunch': 'Meals', 'breakfast': 'Meals', 'khaja': 'Meals', 'restaurant': 'Meals', 'momo': 'Meals', 'burger': 'Meals', 'chicken': 'Meals',
+        'food': 'Meals', 'dinner': 'Meals', 'lunch': 'Meals', 'breakfast': 'Meals', 'khaja': 'Meals', 'restaurant': 'Meals', 'momo': 'Meals', 'burger': 'Meals', 'chicken': 'Meals', 'candle': 'Supplies',
         'rent': 'Housing', 'electricity': 'Utilities', 'water': 'Utilities', 'internet': 'Utilities', 'wifi': 'Utilities',
         'salary': 'Salary', 'sold': 'Sales', 'sale': 'Sales', 'bonus': 'Bonus'
       };
@@ -170,6 +181,7 @@ export default function ChatPage() {
 
     return {
       amount: foundAmount,
+      quantity: foundQuantity,
       type,
       date,
       categoryId: category?.id || null,
@@ -182,37 +194,6 @@ export default function ChatPage() {
   const handleSend = async () => {
     if (!input.trim()) return;
 
-    // Check if we're correcting a previous amount-less transaction
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg && lastMsg.role === 'bot' && lastMsg.type === 'transaction_confirm' && (!lastMsg.data.amount || lastMsg.data.amount <= 0)) {
-      const amountMatch = input.match(/\d+(\.\d+)?/);
-      if (amountMatch) {
-         const newAmount = parseFloat(amountMatch[0]);
-         const userMsg: Message = {
-           id: Date.now().toString(),
-           role: 'user',
-           content: input,
-           timestamp: new Date()
-         };
-         
-         setMessages(prev => {
-           const newMsgs = [...prev, userMsg];
-           const lastBotMsgIndex = newMsgs.findLastIndex(m => m.id === lastMsg.id);
-           if (lastBotMsgIndex !== -1) {
-             newMsgs[lastBotMsgIndex] = {
-               ...newMsgs[lastBotMsgIndex],
-               content: `Got it! I've updated the amount. Does this look correct now?`,
-               data: { ...newMsgs[lastBotMsgIndex].data, amount: newAmount }
-             };
-           }
-           return newMsgs;
-         });
-         
-         setInput('');
-         return;
-      }
-    }
-
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -223,22 +204,58 @@ export default function ChatPage() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
 
+    // Case 1: Resolving a pending transaction with an amount
+    if (pendingTransaction) {
+      const amountMatch = input.match(/\d+(\.\d+)?/);
+      if (amountMatch) {
+         const newAmount = parseFloat(amountMatch[0]);
+         const updatedData = { ...pendingTransaction, amount: newAmount };
+         
+         const botMsg: Message = {
+           id: (Date.now() + 1).toString(),
+           role: 'bot',
+           content: `Got it! I've updated the amount. Does this look correct now?`,
+           timestamp: new Date(),
+           type: 'transaction_confirm',
+           data: updatedData
+         };
+         
+         setPendingTransaction(null);
+         setTimeout(() => setMessages(prev => [...prev, botMsg]), 500);
+         return;
+      }
+    }
+
     const parsedData = parseMessage(input);
 
-    const botMsg: Message = {
-      id: (Date.now() + 1).toString(),
-      role: 'bot',
-      content: parsedData.amount > 0 
-        ? `I parsed a ${parsedData.type}. Does this look correct?`
-        : `I found a ${parsedData.type}, but I didn't see an amount. How much did you sell/spend it at?`,
-      timestamp: new Date(),
-      type: 'transaction_confirm',
-      data: parsedData
-    };
+    if (parsedData.amount > 0) {
+      const botMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'bot',
+        content: `I parsed a ${parsedData.type}. Does this look correct?`,
+        timestamp: new Date(),
+        type: 'transaction_confirm',
+        data: parsedData
+      };
 
-    setTimeout(() => {
-      setMessages(prev => [...prev, botMsg]);
-    }, 500);
+      setTimeout(() => {
+        setMessages(prev => [...prev, botMsg]);
+      }, 500);
+    } else {
+      // Amount missing: Ask and stay conversational (no card yet)
+      setPendingTransaction(parsedData);
+      const question = parsedData.type === 'income' 
+        ? "How much did you sell it at?" 
+        : "How much did you spend?";
+        
+      const botMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'bot',
+        content: `I found a ${parsedData.type}, but I didn't see an amount. ${question}`,
+        timestamp: new Date()
+      };
+      setTimeout(() => setMessages(prev => [...prev, botMsg]), 500);
+    }
   };
 
   const confirmTransaction = async (data: any, msgId: string) => {
@@ -252,6 +269,7 @@ export default function ChatPage() {
         category_id: data.categoryId,
         note: data.note,
         amount: data.amount,
+        quantity: data.quantity || 1,
         type: data.type,
         date: data.date
       });

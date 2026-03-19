@@ -61,6 +61,7 @@ CREATE TABLE transactions (
   user_id UUID REFERENCES profiles(id),
   type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
   amount DECIMAL(15, 2) NOT NULL,
+  quantity DECIMAL(15, 2) DEFAULT 1,
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
   note TEXT,
