@@ -177,6 +177,11 @@ export default function ChatPage() {
       }
     }
 
+    // 6. Unit Price Logic
+    if (lowerText.includes('each') || lowerText.includes('/')) {
+       foundAmount = foundAmount * foundQuantity;
+    }
+
     const potentialCategoryName = (!category && text.split(' ').length > 0) ? text.split(' ')[0] : null;
 
     return {
@@ -187,7 +192,7 @@ export default function ChatPage() {
       categoryId: category?.id || null,
       categoryName: category?.name || 'Other',
       potentialCategoryName: potentialCategoryName,
-      note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today|day before|at|for|last|month|week/gi, '').trim()
+      note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today|day before|at|for|last|month|week|each/gi, '').trim()
     };
   };
 
@@ -229,10 +234,11 @@ export default function ChatPage() {
     const parsedData = parseMessage(input);
 
     if (parsedData.amount > 0) {
+      const article = parsedData.type === 'income' ? 'an' : 'a';
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
-        content: `I parsed a ${parsedData.type}. Does this look correct?`,
+        content: `I parsed ${article} ${parsedData.type}. Does this look correct?`,
         timestamp: new Date(),
         type: 'transaction_confirm',
         data: parsedData
@@ -312,23 +318,32 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] max-w-2xl mx-auto rounded-[3rem] bg-[#1c1c1e] border border-white/5 shadow-2xl overflow-hidden relative">
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
-        {messages.map((msg) => (
-          <div key={msg.id} className={cn(
-            "flex flex-col scale-in",
-            msg.role === 'user' ? "items-end" : "items-start"
-          )}>
-            <div className={cn(
-              "max-w-[85%] p-4 rounded-3xl text-sm font-medium leading-relaxed shadow-lg",
-              msg.role === 'user' 
-                ? "bg-blue-600 text-white rounded-tr-none" 
-                : "bg-white/5 text-white/90 rounded-tl-none border border-white/5"
-            )}>
-              {msg.content}
+    <div className="flex flex-col h-[calc(100vh-140px)] max-w-2xl mx-auto rounded-[2.5rem] bg-white/[0.02] border border-white/5 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden relative backdrop-blur-md">
+      <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
+        {messages.length <= 1 ? (
+          <div className="h-full flex flex-col items-center justify-center text-center space-y-3 opacity-0 animate-in fade-in duration-1000 fill-mode-forwards">
+            <h2 className="text-2xl font-medium tracking-tight text-white/90">Start tracking your business</h2>
+            <p className="text-sm text-white/30 max-w-[240px]">Type your first transaction below to see the magic happen.</p>
+            <div className="pt-4 px-4 py-2 bg-white/5 rounded-full border border-white/5 text-[10px] font-medium text-white/20 uppercase tracking-widest">
+              Example: "Taxi 2000 yesterday"
             </div>
-                       {msg.type === 'transaction_confirm' && (
-              <div className="mt-4 p-6 bg-gradient-to-br from-white/[0.08] to-transparent rounded-[2.5rem] border border-white/10 w-full max-w-[95%] space-y-6 shadow-2xl backdrop-blur-md relative overflow-hidden group">
+          </div>
+        ) : (
+          messages.map((msg) => (
+            <div key={msg.id} className={cn(
+              "flex flex-col scale-in",
+              msg.role === 'user' ? "items-end" : "items-start"
+            )}>
+              <div className={cn(
+                "max-w-[85%] px-5 py-3.5 rounded-2xl text-[15px] leading-relaxed shadow-sm transition-all",
+                msg.role === 'user' 
+                  ? "bg-blue-600 text-white rounded-tr-none" 
+                  : "bg-gradient-to-b from-white/[0.06] to-white/[0.02] text-white/70 rounded-tl-none border border-white/[0.05]"
+              )}>
+                {msg.content}
+              </div>
+                         {msg.type === 'transaction_confirm' && (
+                <div className="mt-4 p-6 bg-white/[0.02] rounded-[2rem] border border-white/10 w-full max-w-[95%] space-y-6 shadow-2xl backdrop-blur-xl relative overflow-hidden group">
                  {/* Decorative Glow */}
                  <div className={cn(
                    "absolute top-0 right-0 w-32 h-32 blur-[80px] -mr-16 -mt-16 opacity-20",
@@ -465,23 +480,36 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 bg-[#1c1c1e] border-t border-white/5">
-        <div className="flex items-center gap-2 bg-white/5 p-2 rounded-[2rem] border border-white/10 ring-1 ring-white/5 shadow-inner">
-          <input 
-            type="text" 
-            placeholder="What happened today?"
-            className="flex-1 bg-transparent border-none outline-none py-3 px-4 text-sm font-medium placeholder:text-white/20"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-          />
-          <button 
-            onClick={handleSend}
-            className="bg-blue-600 w-11 h-11 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-600/30 hover:bg-blue-500 active:scale-90 transition-all shrink-0"
-          >
-            <Send className="w-5 h-5" />
-          </button>
+      {/* Floating Input Bar */}
+      <div className="p-8 pt-0 relative z-20">
+        <div className="relative group max-w-xl mx-auto">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500"></div>
+          <div className="relative flex items-center bg-[#0A0A0A] border border-white/10 rounded-2xl p-1.5 shadow-2xl transition-all duration-300 group-focus-within:border-white/20 group-focus-within:bg-[#0c0c0d]">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Type an expense or income..."
+              className="flex-1 bg-transparent px-4 py-2.5 text-[15px] font-medium text-white placeholder-white/20 outline-none"
+            />
+            <button 
+              onClick={handleSend}
+              disabled={!input.trim()}
+              className={cn(
+                "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
+                input.trim() 
+                  ? "bg-white text-black shadow-lg shadow-white/10 scale-100" 
+                  : "bg-white/5 text-white/20 scale-90"
+              )}
+            >
+              <Send className="w-4 h-4" />
+            </button>
+          </div>
         </div>
+        <p className="text-center text-[9px] font-bold text-white/10 uppercase tracking-[0.3em] mt-6">
+          Powered by Smart Discovery AI
+        </p>
       </div>
     </div>
   );

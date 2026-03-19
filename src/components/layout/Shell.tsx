@@ -67,7 +67,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-72 bg-[#0c0c0d] border-r border-white/5 transition-transform lg:static lg:translate-x-0 shadow-2xl",
+        "fixed inset-y-0 left-0 z-50 w-72 bg-[#0A0A0A] shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)] transition-transform lg:static lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
@@ -101,8 +101,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 px-5 space-y-2 mt-2 py-4">
+          <nav className="flex-1 px-5 space-y-1 mt-2 py-4">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
@@ -111,20 +110,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative",
+                    "flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-200 group relative",
                     isActive 
-                      ? "bg-blue-600 shadow-[0_8px_32px_rgba(37,99,235,0.25)] text-white font-bold scale-[1.02]" 
-                      : "text-white/40 hover:bg-white/5 hover:text-white"
+                      ? "text-white" 
+                      : "text-white/40 hover:bg-white/[0.03] hover:text-white/80"
                   )}
                 >
                   {isActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-r-full" />
+                    <div className="absolute inset-0 bg-blue-500/10 rounded-xl blur-[2px] border border-blue-500/20" />
                   )}
                   <item.icon className={cn(
-                    "w-5 h-5 transition-transform duration-300",
-                    isActive ? "text-white rotate-6 scale-110" : "text-white/20 group-hover:text-white"
+                    "w-[18px] h-[18px] stroke-[1.5] transition-colors duration-200 relative z-10",
+                    isActive ? "text-blue-400" : "text-white/20 group-hover:text-white/40"
                   )} />
-                  <span className="text-sm tracking-tight">{item.name}</span>
+                  <span className="text-sm tracking-tight relative z-10 font-medium">{item.name}</span>
                 </Link>
               );
             })}
@@ -134,10 +133,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="p-6 space-y-4">
             <Link 
               href="/chat"
-              className="flex items-center gap-2 w-full px-4 py-4 bg-white text-black font-black rounded-3xl transition-all shadow-xl hover:bg-white/90 active:scale-95 text-center justify-center group"
+              className="flex items-center gap-2 w-full px-4 py-3 bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] border border-white/5 text-white/90 font-bold rounded-xl transition-all shadow-xl hover:shadow-blue-500/5 hover:border-white/10 active:scale-[0.98] text-center justify-center group"
             >
-              <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-              <span>Record Action</span>
+              <Plus className="w-4 h-4 text-white/40 group-hover:text-white/80 transition-colors" />
+              <span className="text-sm">Record Action</span>
             </Link>
             
             <button 
@@ -152,8 +151,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#070708]">
-        <header className="h-16 border-b border-white/5 bg-[#0c0c0d]/80 backdrop-blur-xl flex items-center justify-between px-6 lg:hidden relative z-30">
+      <div className="flex-1 flex flex-col min-w-0 bg-[#050505]">
+        <header className="h-16 border-b border-white/5 bg-[#0A0A0A]/80 backdrop-blur-xl flex items-center justify-between px-6 lg:hidden relative z-30">
           <button 
             onClick={() => setSidebarOpen(true)}
             className="p-2 -ml-2 text-white/40 hover:text-white transition-colors"
