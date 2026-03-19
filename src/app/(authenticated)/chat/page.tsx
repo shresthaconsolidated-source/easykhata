@@ -3,18 +3,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { format, subDays, parseISO } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { 
   Send, 
-  Bot, 
   Check, 
   X, 
   Sparkles, 
   Calculator, 
   Tag as TagIcon,
   Calendar as CalendarIcon,
-  TrendingUp,
-  TrendingDown,
   Package
 } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
@@ -90,12 +87,10 @@ export default function ChatPage() {
     ];
 
     let foundAmount = 0;
-    let amountIndex = -1;
     for (const pattern of pricePatterns) {
       const match = text.match(pattern);
       if (match && match[1]) {
         foundAmount = parseFloat(match[1]);
-        amountIndex = match.index || -1;
         break;
       }
     }
@@ -105,7 +100,6 @@ export default function ChatPage() {
     const allNumbersMatch = Array.from(text.matchAll(/\d+(?:\.\d+)?/g));
     
     if (allNumbersMatch.length > 1) {
-      // Find a number that is NOT the foundAmount
       for (const match of allNumbersMatch) {
          const val = parseFloat(match[0]);
          if (val !== foundAmount) {
@@ -114,13 +108,9 @@ export default function ChatPage() {
          }
       }
     } else if (allNumbersMatch.length === 1 && foundAmount === 0) {
-      // If only one number and no price indicator, it might be the amount OR quantity
-      // Heuristic: if it's very large, it's likely amount. If it's small (< 10) it might be quantity, but amount is safer to assume.
-      // Default to amount for single numbers.
       foundAmount = parseFloat(allNumbersMatch[0][0]);
     }
 
-    // If still multiple numbers and no foundAmount, assume largest is amount, others are quantity
     if (foundAmount === 0 && allNumbersMatch.length > 1) {
        const numbers = allNumbersMatch.map(m => parseFloat(m[0]));
        foundAmount = Math.max(...numbers);
@@ -209,7 +199,6 @@ export default function ChatPage() {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
 
-    // Case 1: Resolving a pending transaction with an amount
     if (pendingTransaction) {
       const amountMatch = input.match(/\d+(\.\d+)?/);
       if (amountMatch) {
@@ -248,7 +237,6 @@ export default function ChatPage() {
         setMessages(prev => [...prev, botMsg]);
       }, 500);
     } else {
-      // Amount missing: Ask and stay conversational (no card yet)
       setPendingTransaction(parsedData);
       const question = parsedData.type === 'income' 
         ? "How much did you sell it at?" 
@@ -342,13 +330,13 @@ export default function ChatPage() {
               )}>
                 {msg.content}
               </div>
-                         {msg.type === 'transaction_confirm' && (
+              
+              {msg.type === 'transaction_confirm' && (
                 <div className="mt-4 p-6 bg-white/[0.02] rounded-[2rem] border border-white/10 w-full max-w-[95%] space-y-6 shadow-2xl backdrop-blur-xl relative overflow-hidden group">
-                 {/* Decorative Glow */}
-                 <div className={cn(
-                   "absolute top-0 right-0 w-32 h-32 blur-[80px] -mr-16 -mt-16 opacity-20",
-                   msg.data.type === 'income' ? "bg-green-500" : "bg-red-500"
-                 )} />
+                  <div className={cn(
+                    "absolute top-0 right-0 w-32 h-32 blur-[80px] -mr-16 -mt-16 opacity-20",
+                    msg.data.type === 'income' ? "bg-green-500" : "bg-red-500"
+                  )} />
 
                   <div className="flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-4">
@@ -425,7 +413,7 @@ export default function ChatPage() {
                                  {categories.filter(c => c.type === msg.data.type || !c.type).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                               </select>
                            </div>
-                           <p className="font-bold text-[9px] text-yellow-400/60 italic leading-tight">Couldn't auto-detect category. Choose one or create new.</p>
+                           <p className="font-bold text-[9px] text-yellow-400/60 italic leading-tight">Couldn't auto-detect category.</p>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -439,44 +427,42 @@ export default function ChatPage() {
                         </div>
                       )}
                     </div>
-                 </div>
+                  </div>
 
-                 <div className="flex items-center justify-between pt-4 border-t border-white/5 relative z-10">
+                  <div className="flex items-center justify-between pt-4 border-t border-white/5 relative z-10">
                     <div className="flex items-center gap-2 text-white/20">
-                       <CalendarIcon className="w-3 h-3" />
-                       <span className="text-[10px] font-black uppercase tracking-widest">Date</span>
+                      <CalendarIcon className="w-3 h-3" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Date</span>
                     </div>
                     <p className="font-black text-[10px] text-white/40 uppercase tracking-widest italic">{msg.data.date}</p>
-                 </div>
+                  </div>
 
-                 <div className="flex gap-4 pt-2 relative z-10">
+                  <div className="flex gap-4 pt-4 relative z-10">
                     <button 
                       onClick={() => confirmTransaction(msg.data, msg.id)}
                       disabled={!msg.data.amount || msg.data.amount <= 0}
-                      className="flex-1 bg-white text-black font-black h-14 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/90 disabled:opacity-30 disabled:grayscale transition-all shadow-2xl shadow-white/10 group/btn"
+                      className="flex-1 bg-white text-black font-bold h-11 rounded-xl flex items-center justify-center gap-2 hover:bg-white/90 disabled:opacity-30 disabled:grayscale transition-all shadow-lg active:scale-95 group/btn"
                     >
-                      <Check className="w-5 h-5 group-hover/btn:scale-125 transition-transform" /> 
-                      <span className="uppercase tracking-widest text-xs">Confirm</span>
+                      <Check className="w-4 h-4" /> 
+                      <span className="uppercase tracking-widest text-[10px]">Confirm</span>
                     </button>
                     <button 
-                      onClick={() => {
-                        console.log('Discarding message:', msg.id);
-                        setMessages(prev => prev.filter(m => m.id !== msg.id));
-                      }}
-                      className="flex-1 bg-white/5 text-white/40 font-black h-14 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/10 hover:text-white transition-all active:scale-[0.97]"
+                      onClick={() => setMessages(prev => prev.filter(m => m.id !== msg.id))}
+                      className="flex-1 bg-white/5 text-white/40 font-bold h-11 rounded-xl flex items-center justify-center gap-2 hover:bg-white/10 hover:text-white transition-all active:scale-95"
                     >
-                      <X className="w-5 h-5" />
-                      <span className="uppercase tracking-widest text-xs">Cancel</span>
+                      <X className="w-4 h-4" />
+                      <span className="uppercase tracking-widest text-[10px]">Cancel</span>
                     </button>
-                 </div>
-              </div>
-            )}
-            
-            <span className="text-[10px] text-white/20 mt-1 px-2 font-bold uppercase tracking-widest">
-              {format(msg.timestamp, 'HH:mm')}
-            </span>
-          </div>
-        ))}
+                  </div>
+                </div>
+              )}
+              
+              <span className="text-[10px] text-white/10 mt-2 px-2 font-medium uppercase tracking-widest">
+                {format(msg.timestamp, 'HH:mm')}
+              </span>
+            </div>
+          ))
+        )}
         <div ref={messagesEndRef} />
       </div>
 
