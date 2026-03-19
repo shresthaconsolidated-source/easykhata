@@ -89,7 +89,7 @@ export default function DashboardPage() {
       if (t.type === 'income') mInc += amt;
       else {
         mExp += amt;
-        const catName = t.categories?.name || 'Misc';
+        const catName = (Array.isArray(t.categories) ? t.categories[0]?.name : (t.categories as any)?.name) || 'Misc';
         categoryMap.set(catName, (categoryMap.get(catName) || 0) + amt);
       }
     });

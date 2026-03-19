@@ -66,7 +66,7 @@ export default function TransactionsPage() {
 
   const filteredTransactions = transactions.filter(t => {
     const matchesSearch = t.note?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         t.categories?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+                         (Array.isArray(t.categories) ? t.categories[0]?.name : (t.categories as any)?.name)?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterType === 'all' || t.type === filterType;
     return matchesSearch && matchesFilter;
   });
@@ -135,7 +135,7 @@ export default function TransactionsPage() {
                   <td className="px-6 py-5">
                     <div className="flex items-center gap-2">
                        <Tag className="w-3.5 h-3.5 text-white/20" />
-                       <span className="text-sm text-white/80">{t.categories?.name || 'Misc'}</span>
+                       <span className="text-sm text-white/80">{(Array.isArray(t.categories) ? t.categories[0]?.name : (t.categories as any)?.name) || 'Misc'}</span>
                     </div>
                   </td>
                   <td className="px-6 py-5">

@@ -54,7 +54,7 @@ export default function PLPage() {
 
       transactions.forEach(t => {
         const amt = Number(t.amount);
-        const catName = t.categories?.name || 'Uncategorized';
+        const catName = (Array.isArray(t.categories) ? t.categories[0]?.name : (t.categories as any)?.name) || 'Uncategorized';
         if (t.type === 'income') {
           totalIncome += amt;
           incomeMap.set(catName, (incomeMap.get(catName) || 0) + amt);
