@@ -247,36 +247,36 @@ export default function ChatPage() {
                    msg.data.type === 'income' ? "bg-green-500" : "bg-red-500"
                  )} />
 
-                 <div className="flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center ring-1 ring-white/10 group-hover:rotate-12 transition-transform duration-500">
-                        <Sparkles className="w-5 h-5 text-blue-400" />
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center ring-1 ring-white/20 shadow-inner group-hover:rotate-12 group-hover:scale-110 transition-all duration-700">
+                        <Sparkles className="w-6 h-6 text-blue-400" />
                       </div>
                       <div>
-                        <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block leading-none mb-1">Confirmation Details</span>
-                        <h4 className="font-black text-white tracking-widest uppercase text-xs italic">Review Entry</h4>
+                        <span className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] block leading-none mb-2">Smart Discovery</span>
+                        <h4 className="font-black text-white tracking-[0.1em] uppercase text-sm italic">New Entry Found</h4>
                       </div>
                     </div>
-                    <span className={cn(
-                      "text-[10px] font-black uppercase px-3 py-1 rounded-full border shadow-lg",
-                      msg.data.type === 'income' ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-red-500/30 bg-red-500/10 text-red-400"
+                    <div className={cn(
+                      "text-[10px] font-black uppercase px-4 py-1.5 rounded-xl border-2 shadow-2xl backdrop-blur-3xl",
+                      msg.data.type === 'income' ? "border-green-500/40 bg-green-500/10 text-green-400" : "border-red-500/40 bg-red-500/10 text-red-400"
                     )}>
                       {msg.data.type}
-                    </span>
-                 </div>
-
-                 <div className="grid grid-cols-2 gap-8 relative z-10">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-white/20">
-                         <Calculator className="w-3 h-3" />
-                         <span className="text-[10px] font-black uppercase tracking-widest">Amount</span>
-                      </div>
-                      <p className="font-black text-2xl tracking-tighter text-white/90">{formatCurrency(msg.data.amount, company?.currency)}</p>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-white/20">
-                         <TagIcon className="w-3 h-3" />
-                         <span className="text-[10px] font-black uppercase tracking-widest">Category</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-10 relative z-10 pt-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
+                         <Calculator className="w-3.5 h-3.5" />
+                         <span>Amount</span>
+                      </div>
+                      <p className="font-black text-3xl tracking-tighter text-white leading-none">{formatCurrency(msg.data.amount, company?.currency)}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
+                         <TagIcon className="w-3.5 h-3.5" />
+                         <span>Category</span>
                       </div>
                       {(!msg.data.categoryId || msg.data.categoryName === 'Other') ? (
                         <div className="flex flex-col gap-3">
