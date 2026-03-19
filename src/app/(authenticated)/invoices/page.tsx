@@ -120,7 +120,10 @@ export default function InvoicesPage() {
               <button className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
                 <Download className="w-4 h-4" /> PDF
               </button>
-              <button className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
+              <button 
+                onClick={() => window.print()}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+              >
                 <Printer className="w-4 h-4" /> Print
               </button>
               <button className="p-2.5 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl transition-all">
