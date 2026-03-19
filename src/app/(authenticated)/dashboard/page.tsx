@@ -173,20 +173,20 @@ export default function DashboardPage() {
         <div className={cn("absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 opacity-10 blur-3xl rounded-full", color)} />
         <div className="flex items-start justify-between relative z-10">
           <div>
-            <p className="text-white/40 text-[10px] font-black uppercase tracking-wider mb-2">{title}</p>
-            <h3 className="text-2xl font-black italic tracking-tight">{company?.currency} {amount.toLocaleString()}</h3>
+            <p className="text-white/30 text-[10px] font-bold uppercase tracking-wider mb-2">{title}</p>
+            <h3 className="text-xl font-bold tracking-tight">{company?.currency} {amount.toLocaleString()}</h3>
           </div>
-          <div className={cn("p-3 rounded-2xl ring-1 ring-white/10", color.replace('bg-', 'bg-').replace('text-', 'text-').concat('/10'))}>
+          <div className={cn("p-2.5 rounded-xl ring-1 ring-white/10", color.replace('bg-', 'bg-').replace('text-', 'text-').concat('/10'))}>
             <Icon className={cn("w-5 h-5", color.replace('bg-', 'text-'))} />
           </div>
         </div>
-        <div className="mt-4 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest">
+        <div className="mt-4 flex items-center gap-1.5 text-[10px] font-bold tracking-wider">
            {trend >= 0 ? (
              <span className="text-green-400 flex items-center gap-0.5"><ArrowUpRight className="w-3.5 h-3.5" /> +{trend}%</span>
            ) : (
              <span className="text-red-400 flex items-center gap-0.5"><ArrowDownRight className="w-3.5 h-3.5" /> {trend}%</span>
            )}
-           <span className="text-white/20">vs last month</span>
+           <span className="text-white/10 uppercase tracking-widest text-[9px]">vs last month</span>
         </div>
       </div>
     );

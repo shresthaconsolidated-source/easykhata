@@ -96,26 +96,26 @@ export default function PLPage() {
     const variance = compareValue !== undefined ? value - compareValue : null;
     return (
       <div className={cn(
-        "flex items-center justify-between py-4 border-b border-white/5 group transition-colors",
-        isBold ? "font-black text-white" : "text-white/60",
-        isSub ? "pl-8 text-xs" : "pl-0"
+        "flex items-center justify-between py-3 border-b border-white/5 group transition-colors",
+        isBold ? "font-bold text-white text-sm" : "text-white/50 text-[13px]",
+        isSub ? "pl-6" : "pl-0"
       )}>
         <div className="flex items-center gap-2 flex-1">
-           {!isBold && <ChevronRight className="w-3.5 h-3.5 opacity-20 group-hover:opacity-100 transition-opacity" />}
-           <span className="uppercase tracking-widest">{name}</span>
+           {!isBold && <ChevronRight className="w-3 h-3 opacity-10 group-hover:opacity-100 transition-opacity" />}
+           <span className={cn(isBold && "uppercase tracking-wider text-[10px]")}>{name}</span>
         </div>
-        <div className="flex items-center gap-12 text-right">
-           <div className="min-w-[100px]">
-             <span className={cn(isBold && "text-lg italic")}>{formatCurrency(value, company?.currency)}</span>
+        <div className="flex items-center gap-10 text-right">
+           <div className="min-w-[90px]">
+             <span className={cn(isBold && "text-base")}>{formatCurrency(value, company?.currency)}</span>
            </div>
            {isComparing && (
              <>
-               <div className="min-w-[100px] text-white/20 italic">
+               <div className="min-w-[90px] text-white/20">
                  {formatCurrency(compareValue || 0, company?.currency)}
                </div>
                <div className={cn(
-                 "min-w-[80px] font-black italic text-[10px] tracking-tighter",
-                 (variance || 0) >= 0 ? "text-green-500" : "text-red-500"
+                 "min-w-[70px] font-bold text-[10px] tracking-tight",
+                 (variance || 0) >= 0 ? "text-green-500/80" : "text-red-500/80"
                )}>
                  {variance !== null && (variance >= 0 ? `+${variance}` : variance)}
                </div>
@@ -129,23 +129,22 @@ export default function PLPage() {
   if (!company) return null;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight uppercase italic">Profit & Loss</h1>
-          <p className="text-white/30 font-medium mt-1 uppercase tracking-widest text-[10px]">Financial health breakdown and comparison.</p>
+          <h1 className="text-2xl font-bold tracking-tight">Profit & Loss</h1>
+          <p className="text-white/30 text-xs mt-1">Detailed financial performance and comparison.</p>
         </div>
         
-        <div className="flex flex-wrap items-center gap-4">
-           {/* Primary Picker */}
+        <div className="flex flex-wrap items-center gap-3">
            <div className="relative group">
               <input 
                 type="month" 
                 value={format(selectedDate, 'yyyy-MM')}
                 onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                className="bg-[#1c1c1e] px-5 py-3 rounded-2xl border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 outline-none hover:border-white/20 transition-all cursor-pointer appearance-none"
+                className="bg-[#1c1c1e] px-4 py-2.5 rounded-xl border border-white/10 text-[11px] font-bold uppercase tracking-wider text-white/60 outline-none hover:border-white/20 transition-all cursor-pointer appearance-none"
               />
-              <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none opacity-20">
+              <div className="absolute inset-y-0 right-3.5 flex items-center pointer-events-none opacity-20">
                 <CalendarIcon className="w-3.5 h-3.5" />
               </div>
            </div>
@@ -153,13 +152,13 @@ export default function PLPage() {
            <button 
              onClick={() => setIsComparing(!isComparing)}
              className={cn(
-               "px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all border",
+               "px-4 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all border",
                isComparing 
                 ? "bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20" 
                 : "bg-[#1c1c1e] border-white/10 text-white/40 hover:border-white/30"
              )}
            >
-             {isComparing ? 'Close Comparison' : 'Compare Period'}
+             {isComparing ? 'Close' : 'Compare'}
            </button>
 
            {isComparing && (
@@ -168,9 +167,9 @@ export default function PLPage() {
                   type="month" 
                   value={format(compareDate, 'yyyy-MM')}
                   onChange={(e) => setCompareDate(new Date(e.target.value))}
-                  className="bg-blue-600/10 px-5 py-3 rounded-2xl border border-blue-500/30 text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 outline-none hover:border-blue-500/50 transition-all cursor-pointer appearance-none"
+                  className="bg-blue-600/10 px-4 py-2.5 rounded-xl border border-blue-500/20 text-[11px] font-bold uppercase tracking-wider text-blue-400 outline-none hover:border-blue-500/40 transition-all cursor-pointer appearance-none"
                 />
-                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none opacity-40">
+                <div className="absolute inset-y-0 right-3.5 flex items-center pointer-events-none opacity-40">
                   <CalendarIcon className="w-3.5 h-3.5 text-blue-400" />
                 </div>
              </div>
@@ -178,26 +177,24 @@ export default function PLPage() {
         </div>
       </div>
 
-      <div className="bg-[#1c1c1e] p-8 md:p-12 rounded-[3.5rem] border border-white/5 shadow-2xl space-y-16 relative overflow-hidden backdrop-blur-xl">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
-        
+      <div className="bg-[#1c1c1e] p-8 md:p-10 rounded-[2.5rem] border border-white/5 shadow-2xl space-y-12 relative overflow-hidden backdrop-blur-xl">
         {isComparing && (
-          <div className="flex justify-end gap-12 pr-4 text-[9px] font-black uppercase tracking-[0.3em] text-white/20">
-            <div className="min-w-[100px] text-right">{format(selectedDate, 'MMM yyyy')}</div>
-            <div className="min-w-[100px] text-right">{format(compareDate, 'MMM yyyy')}</div>
-            <div className="min-w-[80px] text-right">Variance</div>
+          <div className="flex justify-end gap-10 pr-4 text-[9px] font-bold uppercase tracking-widest text-white/20">
+            <div className="min-w-[90px] text-right">{format(selectedDate, 'MMM yyyy')}</div>
+            <div className="min-w-[90px] text-right">{format(compareDate, 'MMM yyyy')}</div>
+            <div className="min-w-[70px] text-right">Variance</div>
           </div>
         )}
 
         {/* Income Section */}
         <section>
-          <div className="flex items-center gap-4 mb-10">
-            <div className="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center ring-1 ring-green-500/20">
-              <TrendingUp className="w-6 h-6 text-green-400" />
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center ring-1 ring-green-500/20">
+              <TrendingUp className="w-5 h-5 text-green-400" />
             </div>
             <div>
-              <h2 className="font-black text-xl uppercase tracking-[0.1em] italic text-white/90 leading-none">Operating Income</h2>
-              <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em] mt-2">Revenue streams and sales</p>
+              <h2 className="font-bold text-lg text-white/90 leading-none">Operating Income</h2>
+              <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest mt-1.5">Revenue / Sales</p>
             </div>
           </div>
 
@@ -214,13 +211,13 @@ export default function PLPage() {
 
         {/* Expense Section */}
         <section>
-          <div className="flex items-center gap-4 mb-10">
-            <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center ring-1 ring-red-500/20">
-              <TrendingDown className="w-6 h-6 text-red-400" />
+          <div className="flex items-center gap-4 mb-8">
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center ring-1 ring-red-500/20">
+              <TrendingDown className="w-5 h-5 text-red-400" />
             </div>
             <div>
-              <h2 className="font-black text-xl uppercase tracking-[0.1em] italic text-white/90 leading-none">Operating Expenses</h2>
-              <p className="text-[9px] font-bold text-white/20 uppercase tracking-[0.3em] mt-2">Costs and overheads</p>
+              <h2 className="font-bold text-lg text-white/90 leading-none">Operating Expenses</h2>
+              <p className="text-[10px] font-medium text-white/20 uppercase tracking-widest mt-1.5">Costs / Overheads</p>
             </div>
           </div>
 
@@ -236,28 +233,28 @@ export default function PLPage() {
         </section>
 
         {/* Net Profit Section */}
-        <div className="pt-12 border-t border-white/5">
+        <div className="pt-10 border-t border-white/5">
           <div className={cn(
-            "p-12 rounded-[2.5rem] flex items-center justify-between border ring-1 transition-all duration-700",
+            "p-10 rounded-[2rem] flex items-center justify-between border ring-1 transition-all duration-700",
             data?.netProfit >= 0 ? "bg-green-500/5 border-green-500/20 ring-green-500/10" : "bg-red-500/5 border-red-500/20 ring-red-500/10"
           )}>
             <div className="flex-1">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 mb-2 italic">Consolidated Net Profit</h3>
-              <div className="flex items-baseline gap-12">
+              <h3 className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-2">Consolidated Net Profit</h3>
+              <div className="flex items-baseline gap-10">
                 <p className={cn(
-                  "text-6xl font-black tracking-tighter italic",
+                  "text-4xl font-bold tracking-tight",
                   data?.netProfit >= 0 ? "text-green-400" : "text-red-400"
                 )}>
                   {formatCurrency(data?.netProfit, company?.currency)}
                 </p>
                 
                 {isComparing && (
-                   <div className="flex flex-col gap-1">
-                     <span className="text-white/20 text-xs font-bold italic line-through decoration-white/10">
+                   <div className="flex flex-col gap-0.5">
+                     <span className="text-white/10 text-[11px] font-medium line-through">
                         {formatCurrency(compareData?.netProfit || 0, company?.currency)}
                      </span>
                      <span className={cn(
-                       "text-sm font-black italic",
+                       "text-xs font-bold",
                        (data?.netProfit - (compareData?.netProfit || 0)) >= 0 ? "text-green-400" : "text-red-400"
                      )}>
                        {data?.netProfit - (compareData?.netProfit || 0) >= 0 ? '+' : ''}{data?.netProfit - (compareData?.netProfit || 0)}
@@ -267,17 +264,17 @@ export default function PLPage() {
               </div>
             </div>
             <div className={cn(
-              "p-6 rounded-3xl ring-1",
+              "p-5 rounded-2xl ring-1",
               data?.netProfit >= 0 ? "bg-green-500/10 ring-green-500/20 text-green-400" : "bg-red-500/10 ring-red-500/20 text-red-400"
             )}>
-              <BarChart3 className="w-10 h-10" />
+              <BarChart3 className="w-8 h-8" />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2rem] flex items-center justify-center gap-3 text-white/10 text-[10px] font-black uppercase tracking-[0.4em]">
-        <CheckIcon className="w-4 h-4" /> End of Financial Report
+      <div className="p-6 bg-white/[0.01] border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-white/10 text-[9px] font-bold uppercase tracking-[0.3em]">
+        <CheckIcon className="w-3.5 h-3.5" /> End of Financial Report
       </div>
     </div>
   );
