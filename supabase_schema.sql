@@ -50,6 +50,7 @@ CREATE TABLE categories (
   company_id UUID REFERENCES companies(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+  color TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
