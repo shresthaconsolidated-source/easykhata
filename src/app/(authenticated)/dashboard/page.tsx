@@ -11,8 +11,12 @@ import {
   ArrowUpRight, 
   ArrowDownRight,
   PieChart as PieChartIcon,
-  Calendar as CalendarIcon
+  Calendar as CalendarIcon,
+  Zap,
+  AlertCircle,
+  BarChart3
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { 
   BarChart, 
   Bar, 
@@ -29,6 +33,7 @@ import { startOfMonth, endOfMonth, format, subMonths } from 'date-fns';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [stats, setStats] = useState({
     todayIncome: 0,
@@ -36,6 +41,7 @@ export default function DashboardPage() {
     monthIncome: 0,
     monthExpense: 0,
     netProfit: 0,
+    totalBalance: 0,
     prevMonthIncome: 0,
     prevMonthExpense: 0,
     prevMonthProfit: 0
@@ -52,6 +58,7 @@ export default function DashboardPage() {
   }, [user, selectedDate]);
 
   const fetchDashboardData = async () => {
+    setLoading(true);
     const { data: membership } = await supabase
       .from('company_members')
       .select('company_id, companies(*)')
@@ -67,31 +74,24 @@ export default function DashboardPage() {
     const monthEnd = format(endOfMonth(selectedDate), 'yyyy-MM-dd');
     const prevMonthStart = format(startOfMonth(subMonths(selectedDate, 1)), 'yyyy-MM-dd');
     const prevMonthEnd = format(endOfMonth(subMonths(selectedDate, 1)), 'yyyy-MM-dd');
+    const sixMonthsAgo = format(startOfMonth(subMonths(selectedDate, 5)), 'yyyy-MM-dd');
 
-    // 1. Fetch Today's Stats
-    const { data: todayTransactions } = await supabase
-      .from('transactions')
-      .select('amount, type')
-      .eq('company_id', companyId)
-      .eq('date', today);
+    // Parallelize all primary data fetches for speed
+    const [
+      { data: todayTransactions },
+      { data: monthTransactions },
+      { data: prevMonthTransactions },
+      { data: allTimeStats },
+      { data: sixMonthData }
+    ] = await Promise.all([
+      supabase.from('transactions').select('amount, type').eq('company_id', companyId).eq('date', today),
+      supabase.from('transactions').select('amount, type, category_id, categories(name)').eq('company_id', companyId).gte('date', monthStart).lte('date', monthEnd),
+      supabase.from('transactions').select('amount, type').eq('company_id', companyId).gte('date', prevMonthStart).lte('date', prevMonthEnd),
+      supabase.from('transactions').select('amount, type').eq('company_id', companyId),
+      supabase.from('transactions').select('amount, type, date').eq('company_id', companyId).gte('date', sixMonthsAgo).lte('date', monthEnd)
+    ]);
 
-    // 2. Fetch Monthly Stats (Current)
-    const { data: monthTransactions } = await supabase
-      .from('transactions')
-      .select('amount, type, category_id, categories(name)')
-      .eq('company_id', companyId)
-      .gte('date', monthStart)
-      .lte('date', monthEnd);
-
-    // 3. Fetch Previous Monthly Stats (for comparison)
-    const { data: prevMonthTransactions } = await supabase
-      .from('transactions')
-      .select('amount, type')
-      .eq('company_id', companyId)
-      .gte('date', prevMonthStart)
-      .lte('date', prevMonthEnd);
-
-    // 4. Process Current Stats
+    // 1. Process Current & Today's Stats
     let tInc = 0, tExp = 0, mInc = 0, mExp = 0;
     todayTransactions?.forEach(t => {
        if (t.type === 'income') tInc += Number(t.amount);
@@ -109,7 +109,14 @@ export default function DashboardPage() {
       }
     });
 
-    // 5. Process Previous Stats
+    // 2. Process All-Time Balance
+    let totalInc = 0, totalExp = 0;
+    allTimeStats?.forEach(t => {
+      if (t.type === 'income') totalInc += Number(t.amount);
+      else totalExp += Number(t.amount);
+    });
+
+    // 3. Process Previous Month Stats
     let pmInc = 0, pmExp = 0;
     prevMonthTransactions?.forEach(t => {
       if (t.type === 'income') pmInc += Number(t.amount);
@@ -122,32 +129,29 @@ export default function DashboardPage() {
       monthIncome: mInc,
       monthExpense: mExp,
       netProfit: mInc - mExp,
+      totalBalance: totalInc - totalExp,
       prevMonthIncome: pmInc,
       prevMonthExpense: pmExp,
       prevMonthProfit: pmInc - pmExp
     });
 
-    // 6. Category Chart Data
+    // 4. Category Chart Data
     const catData = Array.from(categoryMap.entries()).map(([name, value]) => ({ name, value }));
     setCategoryData(catData);
 
-    // 7. Trend Chart (last 6 months relative to selected)
+    // 5. Process Trend Data locally from the single batched query
     const trendMonths = Array.from({ length: 6 }).map((_, i) => subMonths(selectedDate, 5 - i));
-    const trendData = await Promise.all(trendMonths.map(async (m) => {
-      const start = format(startOfMonth(m), 'yyyy-MM-dd');
-      const end = format(endOfMonth(m), 'yyyy-MM-dd');
-      
-      const { data } = await supabase
-        .from('transactions')
-        .select('amount, type')
-        .eq('company_id', companyId)
-        .gte('date', start)
-        .lte('date', end);
+    const trendData = trendMonths.map(m => {
+      const mStart = startOfMonth(m);
+      const mEnd = endOfMonth(m);
       
       let inc = 0, exp = 0;
-      data?.forEach(t => {
-        if (t.type === 'income') inc += Number(t.amount);
-        else exp += Number(t.amount);
+      sixMonthData?.forEach(t => {
+        const tDate = new Date(t.date);
+        if (tDate >= mStart && tDate <= mEnd) {
+          if (t.type === 'income') inc += Number(t.amount);
+          else exp += Number(t.amount);
+        }
       });
       
       return {
@@ -155,7 +159,7 @@ export default function DashboardPage() {
         income: inc,
         expense: exp
       };
-    }));
+    });
 
     setChartData(trendData);
     setLoading(false);
@@ -168,23 +172,34 @@ export default function DashboardPage() {
 
   const StatCard = ({ title, amount, previousAmount, icon: Icon, color }: any) => {
     const trend = calculateTrend(amount, previousAmount);
-    // Map colors to subtle monochromatic accents
     const accentClass = color.includes('green') ? 'text-emerald-500' : color.includes('red') ? 'text-rose-500' : 'text-blue-500';
     const bgGradient = color.includes('green') ? 'from-emerald-500/5' : color.includes('red') ? 'from-rose-500/5' : 'from-blue-500/5';
+
+    const amountStr = amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const isVeryLarge = amountStr.length > 12;
+    const isLarge = amountStr.length > 9;
+    const fontSizeClass = isVeryLarge ? 'text-2xl' : isLarge ? 'text-3xl' : 'text-4xl';
 
     return (
       <div className="bg-[#0b0b0b] p-8 rounded-[2rem] border border-white/[0.03] shadow-2xl relative overflow-hidden group hover:border-white/10 transition-all duration-500">
         <div className={cn("absolute -top-24 -right-24 w-48 h-48 opacity-[0.03] blur-3xl rounded-full bg-gradient-to-br to-transparent", bgGradient)} />
-        
         <div className="flex flex-col relative z-10 h-full justify-between">
           <div>
             <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{title}</p>
-            <h3 className="text-4xl font-bold tracking-tighter text-white/90">
-              <span className="text-white/20 font-medium mr-1">{company?.currency}</span>
-              {amount.toLocaleString()}
-            </h3>
+            {isVeryLarge ? (
+              <div className="flex flex-col gap-0.5">
+                <span className="text-white/20 text-[10px] font-black uppercase tracking-widest leading-none mb-1">{company?.currency}</span>
+                <h3 className={cn(fontSizeClass, "font-bold tracking-tighter text-white/90 leading-none")}>
+                  {amountStr}
+                </h3>
+              </div>
+            ) : (
+              <h3 className={cn(fontSizeClass, "font-bold tracking-tighter text-white/90")}>
+                <span className="text-white/20 font-medium mr-1 text-[0.6em]">{company?.currency}</span>
+                {amountStr}
+              </h3>
+            )}
           </div>
-
           <div className="mt-8 flex items-center justify-between">
             <div className="flex items-center gap-2 text-[10px] font-bold tracking-tight">
                {trend >= 0 ? (
@@ -207,9 +222,15 @@ export default function DashboardPage() {
     );
   };
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="flex items-center justify-center h-[60vh]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+        <p className="text-white/20 text-xs font-black uppercase tracking-widest">Loading Analytics...</p>
+      </div>
+    </div>
+  );
 
-  // Use a softer, more professional color palette
   const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'];
 
   return (
@@ -234,32 +255,104 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard 
-          title="Income Generated" 
-          amount={stats.monthIncome} 
-          previousAmount={stats.prevMonthIncome}
+          title="Current Cash Balance" 
+          amount={stats.totalBalance} 
+          previousAmount={stats.totalBalance} 
+          icon={Wallet} 
+          color="bg-blue-500 text-blue-500" 
+        />
+        <StatCard 
+          title="Monthly Profit" 
+          amount={stats.netProfit} 
+          previousAmount={stats.prevMonthProfit}
           icon={TrendingUp} 
           color="bg-emerald-500 text-emerald-500" 
         />
         <StatCard 
-          title="Expenses Logged" 
-          amount={stats.monthExpense} 
-          previousAmount={stats.prevMonthExpense}
-          icon={TrendingDown} 
-          color="bg-rose-500 text-rose-500" 
+          title="Money In (Month)" 
+          amount={stats.monthIncome} 
+          previousAmount={stats.prevMonthIncome}
+          icon={ArrowUpRight} 
+          color="bg-emerald-500 text-emerald-500" 
         />
         <StatCard 
-          title="Net Monthly Profit" 
-          amount={stats.netProfit} 
-          previousAmount={stats.prevMonthProfit}
-          icon={Wallet} 
-          color="bg-blue-500 text-blue-500" 
+          title="Money Out (Month)" 
+          amount={stats.monthExpense} 
+          previousAmount={stats.prevMonthExpense}
+          icon={ArrowDownRight} 
+          color="bg-rose-500 text-rose-500" 
         />
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+         <div className="md:col-span-1 bg-[#0b0b0b] p-8 rounded-[2rem] border border-white/[0.03] shadow-2xl space-y-6">
+            <h3 className="font-bold text-sm tracking-tight text-white/60 flex items-center gap-2">
+               <Zap className="w-4 h-4 text-yellow-400" />
+               Key Insights
+            </h3>
+            <div className="space-y-4">
+               {stats.netProfit < 0 && (
+                 <div className="flex gap-3 text-xs">
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0" />
+                    <p className="text-white/40 leading-relaxed font-medium">Warning: expenses are higher than income this month.</p>
+                 </div>
+               )}
+               {calculateTrend(stats.monthExpense, stats.prevMonthExpense) > 10 && (
+                 <div className="flex gap-3 text-xs">
+                    <TrendingUp className="w-4 h-4 text-red-400 shrink-0" />
+                    <p className="text-white/40 leading-relaxed font-medium">Spending increased by {calculateTrend(stats.monthExpense, stats.prevMonthExpense)}% vs last month.</p>
+                 </div>
+               )}
+               {stats.netProfit > 0 && stats.monthIncome > stats.prevMonthIncome && (
+                 <div className="flex gap-3 text-xs">
+                    <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <p className="text-white/40 leading-relaxed font-medium">Profit is increasing steadily this month.</p>
+                 </div>
+               )}
+               <button 
+                 onClick={() => router.push('/insights')}
+                 className="text-[10px] font-black uppercase tracking-widest text-blue-500 hover:text-blue-400 transition-colors pt-2"
+               >
+                 View All Insights →
+               </button>
+            </div>
+         </div>
+
+         <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-[#0b0b0b] p-8 rounded-[2rem] border border-white/[0.03] shadow-2xl flex flex-col justify-between">
+               <div className="flex justify-between items-start">
+                  <h3 className="font-bold text-sm text-white/60">Spending Trend</h3>
+                  <BarChart3 className="w-4 h-4 text-white/10" />
+               </div>
+               <div className="h-24 w-full mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData.slice(-4)}>
+                      <Bar dataKey="expense" fill="#3b82f6" fillOpacity={0.2} radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+               </div>
+               <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mt-4">Last 4 Months</p>
+            </div>
+            
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 rounded-[2rem] text-white shadow-2xl relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-[40px] -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-700" />
+               <h4 className="font-bold mb-1 relative z-10 text-lg tracking-tight">Financial Health</h4>
+               <p className="text-white/60 text-xs font-medium mb-6 relative z-10 leading-relaxed">
+                 Your business is currently {stats.netProfit > 0 ? 'profitable' : 'balancing cash'}.
+               </p>
+               <button 
+                 onClick={() => router.push('/insights')}
+                 className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all relative z-10"
+               >
+                 Detailed Analysis
+               </button>
+            </div>
+         </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-        {/* Trend Chart */}
         <div className="lg:col-span-2 bg-[#0b0b0b] p-10 rounded-[3rem] border border-white/[0.03] shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
           <div className="flex items-center justify-between mb-10">
@@ -299,7 +392,6 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Categories Pie */}
         <div className="bg-[#0b0b0b] p-10 rounded-[3rem] border border-white/[0.03] shadow-2xl flex flex-col relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
           <h3 className="font-bold text-lg tracking-tight mb-10">Categories</h3>

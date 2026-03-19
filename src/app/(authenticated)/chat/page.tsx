@@ -23,6 +23,7 @@ interface Message {
   timestamp: Date;
   data?: any;
   type?: 'chat' | 'transaction_confirm' | 'success';
+  isConfirmation?: boolean;
 }
 
 export default function ChatPage() {
@@ -39,6 +40,7 @@ export default function ChatPage() {
   const [company, setCompany] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [pendingTransaction, setPendingTransaction] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -81,38 +83,38 @@ export default function ChatPage() {
     
     // 1. Better Amount Detection
     const pricePatterns = [
-      /(?:at|for|rs|npr|usd|inr|@)\s*(\d+(?:\.\d+)?)/i,
-      /(\d+(?:\.\d+)?)\s*(?:rs|npr|usd|inr)/i,
-      /(?:^|\s)\$(\d+(?:\.\d+)?)/i
+      /(?:at|for|rs|npr|usd|inr|@)\s*([\d,]+(?:\.\d+)?)/i,
+      /([\d,]+(?:\.\d+)?)\s*(?:rs|npr|usd|inr)/i,
+      /(?:^|\s)\$([\d,]+(?:\.\d+)?)/i
     ];
 
     let foundAmount = 0;
     for (const pattern of pricePatterns) {
       const match = text.match(pattern);
       if (match && match[1]) {
-        foundAmount = parseFloat(match[1]);
+        foundAmount = parseFloat(match[1].replace(/,/g, ''));
         break;
       }
     }
 
     // 2. Quantity Detection
     let foundQuantity = 1;
-    const allNumbersMatch = Array.from(text.matchAll(/\d+(?:\.\d+)?/g));
+    const allNumbersMatch = Array.from(text.matchAll(/[\d,]+(?:\.\d+)?/g));
     
     if (allNumbersMatch.length > 1) {
       for (const match of allNumbersMatch) {
-         const val = parseFloat(match[0]);
+         const val = parseFloat(match[0].replace(/,/g, ''));
          if (val !== foundAmount) {
             foundQuantity = val;
             break;
          }
       }
     } else if (allNumbersMatch.length === 1 && foundAmount === 0) {
-      foundAmount = parseFloat(allNumbersMatch[0][0]);
+      foundAmount = parseFloat(allNumbersMatch[0][0].replace(/,/g, ''));
     }
 
     if (foundAmount === 0 && allNumbersMatch.length > 1) {
-       const numbers = allNumbersMatch.map(m => parseFloat(m[0]));
+       const numbers = allNumbersMatch.map(m => parseFloat(m[0].replace(/,/g, '')));
        foundAmount = Math.max(...numbers);
        foundQuantity = Math.min(...numbers);
     }
@@ -223,14 +225,14 @@ export default function ChatPage() {
     const parsedData = parseMessage(input);
 
     if (parsedData.amount > 0) {
-      const article = parsedData.type === 'income' ? 'an' : 'a';
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
-        content: `I parsed ${article} ${parsedData.type}. Does this look correct?`,
+        content: `We detected an ${parsedData.type}. Please confirm the details below.`,
         timestamp: new Date(),
         type: 'transaction_confirm',
-        data: parsedData
+        data: parsedData,
+        isConfirmation: true,
       };
 
       setTimeout(() => {
@@ -238,45 +240,56 @@ export default function ChatPage() {
       }, 500);
     } else {
       setPendingTransaction(parsedData);
-      const question = parsedData.type === 'income' 
-        ? "How much did you sell it at?" 
-        : "How much did you spend?";
+      if (!parsedData.amount) {
+        let question = "We caught that, but we didn't find the amount. How much was it?";
+        if (parsedData.type === 'expense') question = "We detected an expense. How much did you spend?";
+        if (parsedData.type === 'income') question = "We detected an income. How much was it?";
         
-      const botMsg: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'bot',
-        content: `I found a ${parsedData.type}, but I didn't see an amount. ${question}`,
-        timestamp: new Date()
-      };
-      setTimeout(() => setMessages(prev => [...prev, botMsg]), 500);
+        const botMsg: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'bot',
+          content: question,
+          timestamp: new Date()
+        };
+        setTimeout(() => setMessages(prev => [...prev, botMsg]), 500);
+      }
     }
   };
 
   const confirmTransaction = async (data: any, msgId: string) => {
-    if (!company) return;
+    if (!company || !user) return;
+    setLoading(true);
 
-    const { error } = await supabase
-      .from('transactions')
-      .insert({
-        company_id: company.id,
-        user_id: user?.id,
-        category_id: data.categoryId,
-        note: data.note,
-        amount: data.amount,
-        quantity: data.quantity || 1,
-        type: data.type,
-        date: data.date
-      });
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .insert({
+          company_id: company.id,
+          user_id: user?.id,
+          category_id: data.categoryId,
+          note: data.note,
+          amount: data.amount,
+          quantity: data.quantity || 1,
+          type: data.type,
+          date: data.date
+        });
 
-    if (error) {
-      console.error('Transaction Error:', error);
-      alert(`Error saving transaction: ${error.message}`);
-      return;
+      if (error) {
+        console.error('Transaction Error:', error);
+        alert(`Error saving transaction: ${error.message}`);
+        return;
+      }
+
+      setMessages(prev => prev.map(m => 
+        m.id === msgId ? { 
+          ...m, 
+          type: 'success', 
+          content: `✅ ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} saved successfully!` 
+        } : m
+      ));
+    } finally {
+      setLoading(false);
     }
-
-    setMessages(prev => prev.map(m => 
-      m.id === msgId ? { ...m, type: 'success', content: `✅ ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} saved successfully!` } : m
-    ));
   };
 
   const createCategory = async (name: string, type: 'income' | 'expense', msgId: string) => {
@@ -442,34 +455,32 @@ export default function ChatPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-white/5 relative z-10">
-                    <div className="flex items-center gap-2 text-white/20">
-                      <CalendarIcon className="w-3 h-3" />
-                      <span className="text-[10px] font-black uppercase tracking-widest">Date</span>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <CalendarIcon className="w-4 h-4 text-white/20" />
+                        <span className="text-[13px] font-medium">{format(new Date(msg.data.date), 'MMM dd, yyyy')}</span>
+                      </div>
+                      <input 
+                        type="date" 
+                        value={msg.data.date}
+                        onChange={(e) => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, data: { ...m.data, date: e.target.value } } : m))}
+                        className="bg-white/[0.02] border border-white/5 rounded-lg px-2 py-1 text-[11px] text-white/40 focus:border-white/20 outline-none transition-all cursor-pointer"
+                      />
                     </div>
-                    <input 
-                      type="date"
-                      value={msg.data.date}
-                      onChange={(e) => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, data: { ...m.data, date: e.target.value } } : m))}
-                      className="bg-transparent text-white/40 font-black text-[10px] uppercase tracking-widest outline-none cursor-pointer hover:text-white/60 transition-colors text-right"
-                    />
-                  </div>
 
-                  <div className="flex gap-4 pt-4 relative z-10">
-                    <button 
-                      onClick={() => confirmTransaction(msg.data, msg.id)}
-                      disabled={!msg.data.amount || msg.data.amount <= 0}
-                      className="flex-1 bg-white text-black font-bold h-11 rounded-xl flex items-center justify-center gap-2 hover:bg-white/90 disabled:opacity-30 disabled:grayscale transition-all shadow-lg active:scale-95 group/btn"
-                    >
-                      <Check className="w-4 h-4" /> 
-                      <span className="uppercase tracking-widest text-[10px]">Confirm</span>
-                    </button>
+                  <div className="pt-4 flex gap-3">
                     <button 
                       onClick={() => setMessages(prev => prev.filter(m => m.id !== msg.id))}
-                      className="flex-1 bg-white/5 text-white/40 font-bold h-11 rounded-xl flex items-center justify-center gap-2 hover:bg-white/10 hover:text-white transition-all active:scale-95"
+                      className="flex-1 py-3.5 rounded-2xl bg-white/[0.02] border border-white/5 text-[11px] font-black uppercase tracking-wider text-white/20 hover:text-white transition-all active:scale-95"
                     >
-                      <X className="w-4 h-4" />
-                      <span className="uppercase tracking-widest text-[10px]">Cancel</span>
+                      Discard
+                    </button>
+                    <button 
+                      onClick={() => confirmTransaction(msg.data, msg.id)}
+                      disabled={loading || !msg.data.amount}
+                      className="flex-1 py-3.5 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-black uppercase tracking-wider transition-all shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50"
+                    >
+                      Save Transaction
                     </button>
                   </div>
                 </div>
@@ -488,27 +499,28 @@ export default function ChatPage() {
       <div className="p-8 pt-0 relative z-20">
         <div className="relative group max-w-xl mx-auto">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500"></div>
-          <div className="relative flex items-center bg-[#0A0A0A] border border-white/10 rounded-2xl p-1.5 shadow-2xl transition-all duration-300 group-focus-within:border-white/20 group-focus-within:bg-[#0c0c0d]">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Type an expense or income..."
-              className="flex-1 bg-transparent px-4 py-2.5 text-[15px] font-medium text-white placeholder-white/20 outline-none"
-            />
-            <button 
-              onClick={handleSend}
-              disabled={!input.trim()}
-              className={cn(
-                "w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300",
-                input.trim() 
-                  ? "bg-white text-black shadow-lg shadow-white/10 scale-100" 
-                  : "bg-white/5 text-white/20 scale-90"
-              )}
-            >
-              <Send className="w-4 h-4" />
-            </button>
+          <div className="relative flex flex-col gap-4">
+            <div className="flex-1 bg-[#1a1a1c] rounded-2xl border border-white/10 group-focus-within:border-blue-500/50 transition-all shadow-lg overflow-hidden flex items-center pr-4">
+              <input 
+                type="text" 
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                placeholder="Type an expense or income..."
+                className="flex-1 bg-transparent px-6 py-4 text-sm font-medium outline-none placeholder:text-white/10"
+              />
+              <button 
+                onClick={handleSend}
+                className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+              >
+                <Send className="w-4 h-4 text-white" />
+              </button>
+            </div>
+            <div className="flex gap-4 px-6 text-[9px] font-bold uppercase tracking-[0.2em] text-white/10">
+               <span>Examples:</span>
+               <span className="text-white/20 italic">"Taxi 2000 yesterday"</span>
+               <span className="text-white/20 italic">"Sold goods 5000"</span>
+            </div>
           </div>
         </div>
         <p className="text-center text-[9px] font-bold text-white/10 uppercase tracking-[0.3em] mt-6">

@@ -9,5 +9,7 @@ export function formatCurrency(amount: number, currency: string = 'NPR') {
   return new Intl.NumberFormat('en-NP', {
     style: 'currency',
     currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 }

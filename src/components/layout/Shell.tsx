@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { 
   MessageSquare, 
   LayoutDashboard, 
@@ -35,6 +35,7 @@ const navItems = [
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [company, setCompany] = useState<any>(null);
   const pathname = usePathname();
@@ -101,43 +102,60 @@ export function Shell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <nav className="flex-1 px-5 space-y-1 mt-2 py-4">
+          <nav className="flex-1 px-6 space-y-1.5 overflow-y-auto mt-4 custom-scrollbar">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
               return (
                 <Link
-                  key={item.href}
+                  key={item.name}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-200 group relative",
-                    isActive 
-                      ? "text-white" 
-                      : "text-white/40 hover:bg-white/[0.03] hover:text-white/80"
+                    "group flex items-center gap-3 px-4 py-3 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-300",
+                    isActive
+                      ? "bg-white/5 text-white border border-white/10 shadow-lg"
+                      : "text-white/30 hover:text-white/70 hover:bg-white/[0.02] border border-transparent"
                   )}
                 >
-                  {isActive && (
-                    <div className="absolute inset-0 bg-blue-500/10 rounded-xl blur-[2px] border border-blue-500/20" />
-                  )}
                   <item.icon className={cn(
-                    "w-[18px] h-[18px] stroke-[1.5] transition-colors duration-200 relative z-10",
-                    isActive ? "text-blue-400" : "text-white/20 group-hover:text-white/40"
+                    "w-4 h-4 transition-colors duration-300",
+                    isActive ? "text-blue-500" : "text-white/20 group-hover:text-white/40"
                   )} />
-                  <span className="text-sm tracking-tight relative z-10 font-medium">{item.name}</span>
+                  {item.name}
                 </Link>
               );
             })}
+
+            <Link
+              href="/insights"
+              onClick={() => setSidebarOpen(false)}
+              className={cn(
+                "group flex items-center gap-3 px-4 py-3 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-300",
+                pathname === '/insights'
+                  ? "bg-white/5 text-white border border-white/10 shadow-lg"
+                  : "text-white/30 hover:text-white/70 hover:bg-white/[0.02] border border-transparent"
+              )}
+            >
+              <div className={cn(
+                "w-4 h-4 flex items-center justify-center transition-colors duration-300",
+                pathname === '/insights' ? "text-emerald-500" : "text-white/20 group-hover:text-white/40"
+              )}>
+                 <div className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+              </div>
+              Insights
+            </Link>
           </nav>
 
           {/* Bottom Actions */}
           <div className="p-6 space-y-4">
-            <Link 
-              href="/chat"
-              className="flex items-center gap-2 w-full px-4 py-3 bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] border border-white/5 text-white/90 font-bold rounded-xl transition-all shadow-xl hover:shadow-blue-500/5 hover:border-white/10 active:scale-[0.98] text-center justify-center group"
-            >
-              <Plus className="w-4 h-4 text-white/40 group-hover:text-white/80 transition-colors" />
-              <span className="text-sm">Record Action</span>
-            </Link>
+              <button 
+                onClick={() => router.push('/chat')}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-br from-white/10 to-white/[0.02] border border-white/10 hover:border-white/20 transition-all group overflow-hidden relative shadow-lg active:scale-95"
+              >
+                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Plus className="w-5 h-5 text-white/40 group-hover:text-white transition-colors" />
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-white transition-colors">Add Transaction</span>
+              </button>
             
             <button 
               onClick={signOut}

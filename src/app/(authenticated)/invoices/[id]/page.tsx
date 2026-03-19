@@ -6,7 +6,50 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Printer, Download } from 'lucide-react';
 import { format } from 'date-fns';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, cn } from '@/lib/utils';
+
+const numberToWords = (num: number) => {
+  const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+  const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+  const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+
+  const convertThreeDigits = (n: number): string => {
+    let res = '';
+    if (n >= 100) {
+      res += ones[Math.floor(n / 100)] + ' Hundred ';
+      n %= 100;
+    }
+    if (n >= 10 && n < 20) {
+      res += teens[n - 10];
+    } else {
+      res += tens[Math.floor(n / 10)];
+      if (n % 10 > 0) {
+        if (res.length > 0) res += ' ';
+        res += ones[n % 10];
+      }
+    }
+    return res.trim();
+  };
+
+  if (num === 0) return 'Zero';
+
+  let result = '';
+  if (num >= 10000000) { // Crores (South Asian) or just handle as Millions
+    result += convertThreeDigits(Math.floor(num / 10000000)) + ' Crore ';
+    num %= 10000000;
+  }
+  if (num >= 100000) { // Lakhs
+    result += convertThreeDigits(Math.floor(num / 100000)) + ' Lakh ';
+    num %= 100000;
+  }
+  if (num >= 1000) {
+    result += convertThreeDigits(Math.floor(num / 1000)) + ' Thousand ';
+    num %= 1000;
+  }
+  result += convertThreeDigits(num);
+
+  return result.trim();
+};
 
 export default function InvoiceDetailPage() {
   const { id } = useParams();
@@ -84,103 +127,115 @@ export default function InvoiceDetailPage() {
       </div>
 
       {/* The Invoice Document */}
-      <div className="max-w-[850px] mx-auto bg-white text-[#1a1f36] p-16 shadow-2xl min-h-[1100px] flex flex-col font-sans print:shadow-none print:p-12 print:mx-0 print:w-full">
+      <div className="max-w-[850px] mx-auto bg-white text-[#1a1f36] shadow-[0_64px_128px_-16px_rgba(0,0,0,0.1)] min-h-[1100px] flex flex-col font-sans print:shadow-none print:p-0 print:mx-0 print:w-full overflow-hidden rounded-sm">
         
-        {/* Header Section */}
-        <div className="flex justify-between items-start mb-20">
+        {/* Top Branding Header */}
+        <div className="bg-[#1a5f7a] p-12 text-white flex justify-between items-center">
            <div>
-              <h1 className="text-2xl font-bold tracking-tight mb-4 text-[#1a1f36]">{company?.name}</h1>
-              <div className="text-[13px] text-[#4f566b] space-y-1.5 leading-relaxed">
-                 <p className="whitespace-pre-line">{company?.address}</p>
-                 {company?.pan && <p className="font-medium pt-1 text-[#1a1f36]">PAN: {company.pan}</p>}
-              </div>
+              <h1 className="text-6xl font-black tracking-tight uppercase opacity-90">Invoice</h1>
            </div>
-           <div className="text-right">
-              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#3b82f6] mb-8">Invoice</h2>
-              <div className="space-y-4 text-[13px]">
-                 <div>
-                    <p className="text-[#a3acb9] uppercase tracking-wider text-[10px] font-bold mb-1">Invoice Number</p>
-                    <p className="font-semibold text-[#1a1f36]">{invoice.invoice_number}</p>
-                 </div>
-                 <div className="flex gap-8 justify-end">
-                    <div>
-                      <p className="text-[#a3acb9] uppercase tracking-wider text-[10px] font-bold mb-1">Date Issued</p>
-                      <p className="font-medium">{format(new Date(invoice.date), 'MMMM dd, yyyy')}</p>
-                    </div>
-                    <div>
-                      <p className="text-[#a3acb9] uppercase tracking-wider text-[10px] font-bold mb-1">Due Date</p>
-                      <p className="font-medium">{format(new Date(invoice.due_date), 'MMMM dd, yyyy')}</p>
-                    </div>
-                 </div>
+           <div className="text-right space-y-1">
+              <h2 className="text-xl font-bold">{company?.name}</h2>
+              <div className="text-sm opacity-80 leading-relaxed font-medium">
+                 <p>{company?.address}</p>
+                 {company?.pan && <p>PAN: {company.pan}</p>}
+                 {company?.email && <p>{company.email}</p>}
               </div>
            </div>
         </div>
 
-        {/* Bill To Section */}
-        <div className="mb-20">
-           <h3 className="text-[#a3acb9] uppercase tracking-wider text-[10px] font-bold mb-4">Bill To</h3>
-           <div className="text-[13px] text-[#1a1f36]">
-              <p className="font-bold text-base mb-2">{invoice.client_name}</p>
-              <p className="text-[#4f566b] whitespace-pre-line leading-relaxed max-w-xs">{invoice.client_address}</p>
-              {invoice.client_pan && <p className="font-medium mt-3">PAN: {invoice.client_pan}</p>}
-           </div>
-        </div>
-
-        {/* Items Table */}
-        <div className="flex-1">
-           <table className="w-full">
-              <thead>
-                 <tr className="text-[11px] font-bold uppercase tracking-wider text-[#a3acb9] border-b border-[#e3e8ee]">
-                    <th className="py-4 text-left font-bold">Description</th>
-                    <th className="py-4 text-center w-16">Qty</th>
-                    <th className="py-4 text-right w-32">Rate</th>
-                    <th className="py-4 text-right w-32">Amount</th>
-                 </tr>
-              </thead>
-              <tbody className="divide-y divide-[#f7f9fc]">
-                 {items.map((item) => (
-                    <tr key={item.id} className="text-[13px]">
-                       <td className="py-5 font-medium text-[#1a1f36]">{item.description}</td>
-                       <td className="py-5 text-center text-[#4f566b]">{item.quantity}</td>
-                       <td className="py-5 text-right text-[#4f566b]">{Number(item.rate).toLocaleString()}</td>
-                       <td className="py-5 text-right font-semibold text-[#1a1f36]">{Number(item.amount).toLocaleString()}</td>
-                    </tr>
-                 ))}
-              </tbody>
-           </table>
-        </div>
-
-        {/* Totals Section */}
-        <div className="mt-12 flex justify-end border-t border-[#e3e8ee] pt-12">
-           <div className="w-full max-w-[280px] space-y-4">
-              <div className="flex justify-between text-[13px]">
-                 <span className="text-[#4f566b]">Subtotal</span>
-                 <span className="font-medium text-[#1a1f36]">{company?.currency} {Number(invoice.subtotal).toLocaleString()}</span>
-              </div>
-              {Number(invoice.discount) > 0 && (
-                <div className="flex justify-between text-[13px] text-[#4f566b]">
-                   <span>Discount</span>
-                   <span>- {Number(invoice.discount).toLocaleString()}</span>
+        <div className="p-16 flex-1 flex flex-col">
+          {/* Metadata & Billing */}
+          <div className="grid grid-cols-2 gap-20 mb-20">
+             <div className="space-y-4">
+                <div className="space-y-1">
+                   <p className="text-[11px] font-black uppercase tracking-widest text-[#a3acb9]">Invoice Details</p>
+                   <div className="grid grid-cols-[100px_1fr] text-sm gap-y-1">
+                      <span className="font-bold text-[#4f566b]">Invoice No.</span>
+                      <span className="font-bold text-[#1a1f36]">{invoice.invoice_number}</span>
+                      <span className="font-bold text-[#4f566b]">Date of Issue</span>
+                      <span className="font-medium text-[#1a1f36]">{format(new Date(invoice.date), 'MMMM dd, yyyy')}</span>
+                      <span className="font-bold text-[#4f566b]">Due Date</span>
+                      <span className="font-medium text-[#1a1f36]">{format(new Date(invoice.due_date), 'MMMM dd, yyyy')}</span>
+                   </div>
                 </div>
-              )}
-              <div className="flex justify-between items-baseline pt-4 border-t border-[#f7f9fc]">
-                 <span className="text-[11px] font-black uppercase tracking-wider text-[#1a1f36]">Amount Due</span>
-                 <span className="text-2xl font-bold text-[#1a1f36]">{company?.currency} {Number(invoice.total).toLocaleString()}</span>
-              </div>
-           </div>
+             </div>
+             
+             <div className="text-right space-y-4">
+                <div className="space-y-2">
+                   <p className="text-[11px] font-black uppercase tracking-widest text-[#a3acb9]">Bill To</p>
+                   <div className="text-sm space-y-1">
+                      <p className="font-black text-xl text-[#1a1f36] leading-none mb-1">{invoice.client_name}</p>
+                      <p className="text-[#4f566b] font-medium whitespace-pre-line leading-relaxed">{invoice.client_address}</p>
+                      {invoice.client_pan && <p className="text-[#4f566b] font-bold mt-2 text-xs">PAN: {invoice.client_pan}</p>}
+                   </div>
+                </div>
+             </div>
+          </div>
+
+          {/* Items Table */}
+          <div className="flex-1">
+             <table className="w-full border-collapse">
+                <thead>
+                   <tr className="bg-[#f8fafc] text-[11px] font-black uppercase tracking-widest text-[#4f566b] border-y-2 border-[#1a5f7a]/20">
+                      <th className="py-4 px-6 text-left w-16">Item</th>
+                      <th className="py-4 px-6 text-left">Description</th>
+                      <th className="py-4 px-6 text-center w-24">Qty</th>
+                      <th className="py-4 px-6 text-right w-32">Rate</th>
+                      <th className="py-4 px-6 text-right w-32">Amount</th>
+                   </tr>
+                </thead>
+                <tbody className="divide-y divide-[#f1f5f9]">
+                   {items.map((item, index) => (
+                      <tr key={item.id} className={cn("text-sm group hover:bg-[#f8fafc]/50", index % 2 === 1 && "bg-[#f8fafc]/30")}>
+                         <td className="py-5 px-6 font-bold text-[#a3acb9]">{index + 1}</td>
+                         <td className="py-5 px-6 font-semibold text-[#1a1f36]">{item.description}</td>
+                         <td className="py-5 px-6 text-center text-[#4f566b] font-medium">{item.quantity}</td>
+                         <td className="py-5 px-6 text-right text-[#4f566b] font-medium">{Number(item.rate).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                         <td className="py-5 px-6 text-right font-black text-[#1a1f36]">{Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                      </tr>
+                   ))}
+                </tbody>
+             </table>
+          </div>
+
+          {/* Totals Section */}
+          <div className="mt-12 pt-8 border-t-2 border-[#f1f5f9]">
+             <div className="flex items-start justify-between">
+                {/* In Words - Left Side */}
+                <div className="max-w-[450px]">
+                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a3acb9] mb-1">In Words</p>
+                   <p className="text-sm font-bold text-[#1a5f7a] italic leading-tight">
+                      {company?.currency} {numberToWords(Math.floor(invoice.total))} Only
+                   </p>
+                </div>
+
+                {/* Totals Breakdown - Right Side */}
+                <div className="w-full max-w-[320px] space-y-4">
+                   <div className="flex justify-between text-sm text-[#4f566b] font-bold px-6">
+                      <span>Subtotal</span>
+                      <span className="text-[#1a1f36] font-black">{company?.currency} {Number(invoice.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                   </div>
+                   {Number(invoice.discount) > 0 && (
+                     <div className="flex justify-between text-sm text-emerald-600 font-bold px-6">
+                        <span>Discount</span>
+                        <span>- {Number(invoice.discount).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                     </div>
+                   )}
+                   <div className="flex justify-between items-center py-4 border-t border-[#f1f5f9] px-6">
+                      <span className="text-[11px] font-black uppercase tracking-widest text-[#1a5f7a]">Amount Due</span>
+                      <span className="text-2xl font-black text-[#1a5f7a] tracking-tight">
+                        {company?.currency} {Number(invoice.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </span>
+                   </div>
+                </div>
+             </div>
+          </div>
         </div>
 
-        {/* Footer Section */}
-        <div className="mt-32 pt-12 flex justify-between items-end border-t border-[#f7f9fc]">
-           <div className="text-[11px] text-[#a3acb9] font-medium">
-              Thank you for your business.
-           </div>
-           <div className="text-right">
-              <div className="mb-4 h-12 flex items-end justify-end">
-                 {/* Sign space */}
-              </div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-[#1a1f36]">Authorized Signature</p>
-           </div>
+        {/* Branding Footer */}
+        <div className="bg-[#1a5f7a] p-8 text-white text-center">
+           <p className="text-sm font-black uppercase tracking-widest opacity-90">Thank you for your business!</p>
         </div>
 
       </div>
@@ -196,7 +251,7 @@ export default function InvoiceDetailPage() {
           body { background: white !important; }
           .print\\:hidden { display: none !important; }
           .print\\:p-0 { padding: 0 !important; }
-          @page { margin: 0; }
+          @page { margin: 20mm; }
         }
       `}</style>
     </div>

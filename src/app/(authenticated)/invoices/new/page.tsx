@@ -141,7 +141,10 @@ export default function NewInvoicePage() {
           .select()
           .single();
         
-        if (clientError) throw clientError;
+        if (clientError) {
+          console.error('Client creation error:', clientError);
+          throw new Error(clientError.message);
+        }
         clientId = newClient.id;
       }
 
@@ -165,25 +168,33 @@ export default function NewInvoicePage() {
         .select()
         .single();
 
-      if (invError) throw invError;
+      if (invError) {
+        console.error('Invoice creation error:', invError);
+        throw new Error(invError.message);
+      }
 
-      // 2. Create Items
-      const { error: itemsError } = await supabase
-        .from('invoice_items')
-        .insert(items.map(i => ({
-          invoice_id: invData.id,
-          description: i.description,
-          quantity: i.quantity,
-          rate: i.rate,
-          amount: i.amount
-        })));
+      // 3. Create Items
+      if (invData) {
+        const { error: itemsError } = await supabase
+          .from('invoice_items')
+          .insert(items.map(i => ({
+            invoice_id: invData.id,
+            description: i.description,
+            quantity: i.quantity,
+            rate: i.rate,
+            amount: i.amount
+          })));
 
-      if (itemsError) throw itemsError;
+        if (itemsError) {
+          console.error('Invoice items error:', itemsError);
+          throw new Error(itemsError.message);
+        }
+      }
 
       router.push('/invoices');
-    } catch (error) {
-      console.error('Error creating invoice:', error);
-      alert('Failed to save invoice');
+    } catch (error: any) {
+      console.error('Final Submission Error:', error);
+      alert(error.message || 'Failed to save invoice');
     } finally {
       setLoading(false);
     }
@@ -217,14 +228,14 @@ export default function NewInvoicePage() {
             <div className="md:col-span-2 space-y-2">
               <label className="text-xs font-bold text-white/30 uppercase tracking-widest ml-1">Select Client</label>
               <select
-                className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-medium appearance-none cursor-pointer"
+                className="w-full bg-[#1c1c1e] text-white border border-white/10 rounded-2xl py-4 px-5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-medium appearance-none cursor-pointer"
                 value={selectedClientId}
                 onChange={(e) => handleClientChange(e.target.value)}
               >
-                <option value="">-- Manual Entry --</option>
-                <option value="new">+ Add New Client</option>
+                <option value="" className="bg-[#1c1c1e] text-white">Manual Entry</option>
+                <option value="new" className="bg-[#1c1c1e] text-white">+ Add Client</option>
                 {clients.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
+                  <option key={c.id} value={c.id} className="bg-[#1c1c1e] text-white">{c.name}</option>
                 ))}
               </select>
             </div>
@@ -234,19 +245,19 @@ export default function NewInvoicePage() {
               <input 
                 required
                 type="text"
-                placeholder="Client/Company Name"
+                placeholder="Client name"
                 className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-medium"
                 value={invoice.client_name}
                 onChange={(e) => setInvoice({...invoice, client_name: e.target.value})}
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-bold text-white/30 uppercase tracking-widest ml-1">Client PAN (Optional)</label>
+              <label className="text-xs font-bold text-white/30 uppercase tracking-widest ml-1">PAN (Optional)</label>
               <div className="relative">
                 <Hash className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                 <input 
                   type="text"
-                  placeholder="PAN Number"
+                  placeholder="PAN number"
                   className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-11 pr-5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-medium"
                   value={invoice.client_pan}
                   onChange={(e) => setInvoice({...invoice, client_pan: e.target.value})}
@@ -254,12 +265,12 @@ export default function NewInvoicePage() {
               </div>
             </div>
             <div className="md:col-span-2 space-y-2">
-              <label className="text-xs font-bold text-white/30 uppercase tracking-widest ml-1">Client Address</label>
+              <label className="text-xs font-bold text-white/30 uppercase tracking-widest ml-1">Address</label>
               <div className="relative">
                 <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                 <input 
                   type="text"
-                  placeholder="Shipping/Billing Address"
+                  placeholder="Billing address"
                   className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-11 pr-5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-medium"
                   value={invoice.client_address}
                   onChange={(e) => setInvoice({...invoice, client_address: e.target.value})}
@@ -277,7 +288,7 @@ export default function NewInvoicePage() {
                   onChange={(e) => setSaveClient(e.target.checked)}
                 />
                 <label htmlFor="save-client" className="text-sm font-medium text-white/60">
-                  Save this client for future invoices
+                  Save this client
                 </label>
               </div>
             )}
@@ -419,7 +430,7 @@ export default function NewInvoicePage() {
           >
             {loading ? 'Generating...' : (
               <>
-                <FileText className="w-6 h-6" /> Save & Generate Invoice
+                <FileText className="w-6 h-6" /> Generate Invoice
               </>
             )}
           </button>

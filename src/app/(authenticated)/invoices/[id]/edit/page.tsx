@@ -196,7 +196,7 @@ export default function EditInvoicePage() {
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           <span className="font-medium">Cancel</span>
         </button>
-        <h1 className="text-xl font-bold italic uppercase tracking-tighter">Edit Invoice {invoice.invoice_number}</h1>
+        <h1 className="text-xl font-bold italic uppercase tracking-tighter text-blue-500">Edit Invoice {invoice.invoice_number}</h1>
         <div className="w-10" />
       </div>
 
@@ -252,19 +252,22 @@ export default function EditInvoicePage() {
              <label className="text-xs font-bold text-white/30 uppercase tracking-widest ml-1 block">Date</label>
              <input type="date" className="w-full bg-transparent border-none p-0 text-white font-bold focus:ring-0" value={invoice.date} onChange={(e) => setInvoice({...invoice, date: e.target.value})} />
            </div>
-           <div className="bg-[#1c1c1e] p-6 rounded-[2rem] border border-white/5 shadow-xl space-y-2">
+           <div className="bg-[#1c1c1e] p-6 rounded-[2rem] border border-white/5 shadow-xl space-y-2 relative">
              <label className="text-xs font-bold text-white/30 uppercase tracking-widest ml-1 block">Status</label>
              <select 
-               className="w-full bg-transparent border-none p-0 text-white font-bold focus:ring-0 cursor-pointer uppercase" 
+               className="w-full bg-[#1c1c1e] border-none p-0 text-white font-bold focus:ring-0 cursor-pointer uppercase appearance-none" 
                value={invoice.status} 
                onChange={(e) => setInvoice({...invoice, status: e.target.value})}
              >
-               <option value="draft">Draft</option>
-               <option value="sent">Sent</option>
-               <option value="paid">Paid</option>
-               <option value="overdue">Overdue</option>
-               <option value="cancelled">Cancelled</option>
+               <option value="draft" className="bg-[#1c1c1e] text-white">Draft</option>
+               <option value="sent" className="bg-[#1c1c1e] text-white">Sent</option>
+               <option value="paid" className="bg-[#1c1c1e] text-white">Paid</option>
+               <option value="overdue" className="bg-[#1c1c1e] text-white">Overdue</option>
+               <option value="cancelled" className="bg-[#1c1c1e] text-white">Cancelled</option>
              </select>
+             <div className="absolute right-6 top-1/2 translate-y-2 pointer-events-none text-white/20">
+                <Plus className="w-4 h-4 rotate-45" /> {/* Simple arrow-like indicator */}
+             </div>
            </div>
         </div>
 
@@ -272,7 +275,7 @@ export default function EditInvoicePage() {
         <div className="bg-[#1c1c1e] p-8 rounded-[2.5rem] border border-white/5 shadow-xl">
            <div className="flex items-center justify-between mb-8">
               <h3 className="font-bold text-lg">Items</h3>
-              <button type="button" onClick={addItem} className="text-blue-400 font-bold text-sm flex items-center gap-1 hover:text-blue-300">
+              <button type="button" onClick={addItem} className="text-blue-400 font-bold text-sm flex items-center gap-1 hover:text-blue-300 transition-colors">
                 <Plus className="w-4 h-4" /> Add Item
               </button>
            </div>
@@ -282,7 +285,7 @@ export default function EditInvoicePage() {
                    <div className="col-span-6">
                       <input 
                         placeholder="Description"
-                        className="w-full bg-white/5 rounded-xl py-3 px-4 text-sm"
+                        className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-sm focus:ring-2 focus:ring-blue-500/30 transition-all"
                         value={item.description}
                         onChange={(e) => updateItem(item.id, 'description', e.target.value)}
                       />
@@ -290,7 +293,7 @@ export default function EditInvoicePage() {
                    <div className="col-span-2">
                       <input 
                         type="number"
-                        className="w-full bg-white/5 rounded-xl py-3 px-4 text-sm text-center"
+                        className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-sm text-center focus:ring-2 focus:ring-blue-500/30 transition-all"
                         value={item.quantity}
                         onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
                       />
@@ -298,14 +301,15 @@ export default function EditInvoicePage() {
                    <div className="col-span-2">
                       <input 
                         type="number"
-                        className="w-full bg-white/5 rounded-xl py-3 px-4 text-sm text-center"
+                        className="w-full bg-white/5 border border-white/5 rounded-xl py-3 px-4 text-sm text-center focus:ring-2 focus:ring-blue-500/30 transition-all"
                         value={item.rate}
                         onChange={(e) => updateItem(item.id, 'rate', e.target.value)}
                       />
                    </div>
                    <div className="col-span-2 flex items-center justify-end gap-2 text-sm font-bold">
+                      <span className="text-white/40 font-medium mr-1">{company?.currency}</span>
                       {Number(item.amount).toLocaleString()}
-                      <button type="button" onClick={() => removeItem(item.id)} className="text-white/10 hover:text-red-400">
+                      <button type="button" onClick={() => removeItem(item.id)} className="ml-2 p-2 text-white/5 hover:text-red-400 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                    </div>
@@ -314,16 +318,23 @@ export default function EditInvoicePage() {
            </div>
 
            <div className="mt-12 pt-8 border-t border-white/5 flex flex-col items-end space-y-2">
-              <p className="text-white/40 font-bold">Total {company?.currency} {total.toLocaleString()}</p>
+              <p className="text-xl font-black text-blue-500">
+                <span className="text-xs font-bold uppercase tracking-widest text-white/20 mr-4">Total Amount</span>
+                {company?.currency} {total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </p>
            </div>
         </div>
 
         <button 
           type="submit" 
           disabled={saving}
-          className="w-full bg-white text-black font-black py-5 rounded-[2rem] flex items-center justify-center gap-2 shadow-2xl active:scale-95"
+          className="w-full bg-white text-black font-black py-5 rounded-[2rem] flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] hover:bg-white/90 transition-all disabled:opacity-50"
         >
-          <Save className="w-6 h-6" /> Save Changes
+          {saving ? 'Saving...' : (
+            <>
+              <Save className="w-6 h-6" /> Save Changes
+            </>
+          )}
         </button>
       </form>
     </div>
