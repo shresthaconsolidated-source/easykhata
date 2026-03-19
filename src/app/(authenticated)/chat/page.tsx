@@ -82,27 +82,54 @@ export default function ChatPage() {
     const amount = amountMatch ? parseFloat(amountMatch[0]) : 0;
     
     let type: 'income' | 'expense' = 'expense';
-    if (text.toLowerCase().includes('received') || text.toLowerCase().includes('income') || text.toLowerCase().includes('sold')) {
+    const lowerText = text.toLowerCase();
+    
+    // Improved type detection
+    if (
+      lowerText.includes('received') || 
+      lowerText.includes('income') || 
+      lowerText.includes('sold') || 
+      lowerText.includes('profit') ||
+      lowerText.includes('earned') ||
+      lowerText.includes('plus')
+    ) {
       type = 'income';
     }
 
     let date = format(new Date(), 'yyyy-MM-dd');
-    if (text.toLowerCase().includes('yesterday')) {
+    if (lowerText.includes('yesterday')) {
       date = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+    } else if (lowerText.includes('day before yesterday')) {
+      date = format(subDays(new Date(), 2), 'yyyy-MM-dd');
+    } else {
+      // Look for specific date mentions like "March 15" or "15th"
+      // Simplified for now, but could be enhanced
     }
 
     // Heuristic category matching
     let category = categories.find(c => 
-      text.toLowerCase().includes(c.name.toLowerCase())
+      lowerText.includes(c.name.toLowerCase())
     );
 
     if (!category) {
-      if (text.toLowerCase().includes('taxi') || text.toLowerCase().includes('bus') || text.toLowerCase().includes('travel')) {
-        category = categories.find(c => c.name === 'Travel');
-      } else if (text.toLowerCase().includes('food') || text.toLowerCase().includes('dinner')) {
-        category = categories.find(c => c.name === 'Meals');
+      // Premade keywords for auto-categorization
+      const keywordMap: Record<string, string> = {
+        'taxi': 'Travel', 'bus': 'Travel', 'fuel': 'Travel', 'petrol': 'Travel', 'ride': 'Travel', 'uber': 'Travel', 'pathao': 'Travel',
+        'food': 'Meals', 'dinner': 'Meals', 'lunch': 'Meals', 'breakfast': 'Meals', 'khaja': 'Meals', 'restaurant': 'Meals', 'momo': 'Meals',
+        'rent': 'Housing', 'electricity': 'Utilities', 'water': 'Utilities', 'internet': 'Utilities', 'wifi': 'Utilities',
+        'salary': 'Salary', 'sold': 'Sales', 'sale': 'Sales', 'bonus': 'Bonus'
+      };
+
+      for (const [kw, catName] of Object.entries(keywordMap)) {
+        if (lowerText.includes(kw)) {
+          category = categories.find(c => c.name === catName);
+          if (category) break;
+        }
       }
     }
+
+    // If still no category and text is like "taxi 200", we could assume "taxi" is the potential category name
+    const potentialCategoryName = (!category && text.split(' ').length > 0) ? text.split(' ')[0] : null;
 
     return {
       amount,
@@ -110,7 +137,8 @@ export default function ChatPage() {
       date,
       categoryId: category?.id || null,
       categoryName: category?.name || 'Other',
-      note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today/gi, '').trim()
+      potentialCategoryName: potentialCategoryName,
+      note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today|day before/gi, '').trim()
     };
   };
 
@@ -165,7 +193,33 @@ export default function ChatPage() {
     }
 
     setMessages(prev => prev.map(m => 
-      m.id === msgId ? { ...m, type: 'success', content: '✅ Transaction saved successfully!' } : m
+      m.id === msgId ? { ...m, type: 'success', content: `✅ ${data.type.charAt(0).toUpperCase() + data.type.slice(1)} saved successfully!` } : m
+    ));
+  };
+
+  const createCategory = async (name: string, type: 'income' | 'expense', msgId: string) => {
+    if (!company) return;
+
+    const { data: newCat, error } = await supabase
+      .from('categories')
+      .insert({
+        company_id: company.id,
+        name: name,
+        type: type,
+        color: type === 'income' ? '#10b981' : '#f43f5e'
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Category Creation Error:', error);
+      alert(`Error creating category: ${error.message}`);
+      return;
+    }
+
+    setCategories(prev => [...prev, newCat]);
+    setMessages(prev => prev.map(m => 
+      m.id === msgId ? { ...m, data: { ...m.data, categoryId: newCat.id, categoryName: newCat.name } } : m
     ));
   };
 
@@ -185,56 +239,114 @@ export default function ChatPage() {
             )}>
               {msg.content}
             </div>
-            
-            {msg.type === 'transaction_confirm' && (
-              <div className="mt-4 p-5 bg-white/5 rounded-3xl border border-white/10 w-full max-w-[90%] space-y-4 shadow-xl">
-                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-blue-400" />
-                      <span className="text-xs font-bold text-white/40 uppercase tracking-widest">Confirmation</span>
+                       {msg.type === 'transaction_confirm' && (
+              <div className="mt-4 p-6 bg-gradient-to-br from-white/[0.08] to-transparent rounded-[2.5rem] border border-white/10 w-full max-w-[95%] space-y-6 shadow-2xl backdrop-blur-md relative overflow-hidden group">
+                 {/* Decorative Glow */}
+                 <div className={cn(
+                   "absolute top-0 right-0 w-32 h-32 blur-[80px] -mr-16 -mt-16 opacity-20",
+                   msg.data.type === 'income' ? "bg-green-500" : "bg-red-500"
+                 )} />
+
+                 <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-white/5 flex items-center justify-center ring-1 ring-white/10 group-hover:rotate-12 transition-transform duration-500">
+                        <Sparkles className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] block leading-none mb-1">Confirmation Details</span>
+                        <h4 className="font-black text-white tracking-widest uppercase text-xs italic">Review Entry</h4>
+                      </div>
                     </div>
                     <span className={cn(
-                      "text-[10px] font-black uppercase px-2 py-0.5 rounded-full border",
-                      msg.data.type === 'income' ? "border-green-500/50 text-green-400" : "border-red-500/50 text-red-400"
+                      "text-[10px] font-black uppercase px-3 py-1 rounded-full border shadow-lg",
+                      msg.data.type === 'income' ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-red-500/30 bg-red-500/10 text-red-400"
                     )}>
                       {msg.data.type}
                     </span>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-2 gap-8 relative z-10">
                     <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-white/30 truncate">
+                      <div className="flex items-center gap-2 text-white/20">
                          <Calculator className="w-3 h-3" />
-                         <span className="text-[10px] font-bold uppercase">Amount</span>
+                         <span className="text-[10px] font-black uppercase tracking-widest">Amount</span>
                       </div>
-                      <p className="font-bold text-lg">{formatCurrency(msg.data.amount, company?.currency)}</p>
+                      <p className="font-black text-2xl tracking-tighter text-white/90">{formatCurrency(msg.data.amount, company?.currency)}</p>
                     </div>
                     <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-white/30 truncate">
+                      <div className="flex items-center gap-2 text-white/20">
                          <TagIcon className="w-3 h-3" />
-                         <span className="text-[10px] font-bold uppercase">Category</span>
+                         <span className="text-[10px] font-black uppercase tracking-widest">Category</span>
                       </div>
-                      <p className="font-bold text-sm truncate">{msg.data.categoryName}</p>
+                      {(!msg.data.categoryId || msg.data.categoryName === 'Other') ? (
+                        <div className="flex flex-col gap-3">
+                           <div className="flex flex-wrap gap-2">
+                              {msg.data.potentialCategoryName && (
+                                <button 
+                                  onClick={() => createCategory(msg.data.potentialCategoryName, msg.data.type, msg.id)}
+                                  className="bg-blue-500/10 border border-blue-500/30 rounded-xl py-1.5 px-3 text-[10px] font-black text-blue-400 hover:bg-blue-500/20 transition-all flex items-center gap-2"
+                                >
+                                  <Sparkles className="w-3 h-3" />
+                                  Add "{msg.data.potentialCategoryName}"
+                                </button>
+                              )}
+                              <select 
+                                className="bg-white/5 border border-white/10 rounded-xl py-1.5 px-3 text-[10px] font-bold text-white/60 outline-none hover:bg-white/10 transition-all cursor-pointer flex-1 min-w-[120px]"
+                                onChange={(e) => {
+                                  const cat = categories.find(c => c.id === e.target.value);
+                                  if (cat) {
+                                     setMessages(prev => prev.map(m => 
+                                       m.id === msg.id ? { ...m, data: { ...m.data, categoryId: cat.id, categoryName: cat.name } } : m
+                                     ));
+                                  }
+                                }}
+                                value={msg.data.categoryId || ''}
+                              >
+                                 <option value="">Select Category...</option>
+                                 {categories.filter(c => c.type === msg.data.type || !c.type).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                              </select>
+                           </div>
+                           <p className="font-bold text-[9px] text-yellow-400/60 italic leading-tight">Couldn't auto-detect category. Choose one or create new.</p>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                           <p className="font-black text-sm text-white/80 uppercase tracking-tight">{msg.data.categoryName}</p>
+                           <button 
+                             onClick={() => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, data: { ...m.data, categoryId: null, categoryName: 'Other' } } : m))}
+                             className="text-[8px] font-black text-white/20 hover:text-white/40 uppercase tracking-tighter"
+                           >
+                             (Change)
+                           </button>
+                        </div>
+                      )}
                     </div>
                  </div>
 
-                 <div className="space-y-1">
-                    <div className="flex items-center gap-1.5 text-white/30">
+                 <div className="flex items-center justify-between pt-4 border-t border-white/5 relative z-10">
+                    <div className="flex items-center gap-2 text-white/20">
                        <CalendarIcon className="w-3 h-3" />
-                       <span className="text-[10px] font-bold uppercase">Date</span>
+                       <span className="text-[10px] font-black uppercase tracking-widest">Date</span>
                     </div>
-                    <p className="font-medium text-xs text-white/60">{msg.data.date}</p>
+                    <p className="font-black text-[10px] text-white/40 uppercase tracking-widest italic">{msg.data.date}</p>
                  </div>
 
-                 <div className="flex gap-3 pt-2">
+                 <div className="flex gap-4 pt-2 relative z-10">
                     <button 
                       onClick={() => confirmTransaction(msg.data, msg.id)}
-                      className="flex-1 bg-white text-black font-bold h-11 rounded-2xl flex items-center justify-center gap-2 hover:bg-white/90 active:scale-95 transition-all"
+                      className="flex-1 bg-white text-black font-black h-14 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/90 active:scale-[0.97] transition-all shadow-2xl shadow-white/10 group/btn"
                     >
-                      <Check className="w-4 h-4" /> Confirm
+                      <Check className="w-5 h-5 group-hover/btn:scale-125 transition-transform" /> 
+                      <span className="uppercase tracking-widest text-xs">Confirm</span>
                     </button>
-                    <button className="flex-1 bg-white/5 text-white font-bold h-11 rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 active:scale-95 transition-all">
-                      <X className="w-4 h-4" /> Cancel
+                    <button 
+                      onClick={() => {
+                        console.log('Discarding message:', msg.id);
+                        setMessages(prev => prev.filter(m => m.id !== msg.id));
+                      }}
+                      className="flex-1 bg-white/5 text-white/40 font-black h-14 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/10 hover:text-white transition-all active:scale-[0.97]"
+                    >
+                      <X className="w-5 h-5" />
+                      <span className="uppercase tracking-widest text-xs">Cancel</span>
                     </button>
                  </div>
               </div>

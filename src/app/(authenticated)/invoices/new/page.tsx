@@ -55,8 +55,14 @@ export default function NewInvoicePage() {
     if (data) {
       setCompany(data.companies);
       fetchClients(data.company_id);
-      // Auto-generate invoice number based on date/timestamp for MVP
-      setInvoice(prev => ({ ...prev, invoice_number: `INV-${Date.now().toString().slice(-6)}` }));
+      
+      // Sequential Invoice Numbering - Requested by User
+      const { count } = await supabase
+        .from('invoices')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', data.company_id);
+      
+      setInvoice(prev => ({ ...prev, invoice_number: `INV-${(count || 0) + 1}` }));
     }
   };
 

@@ -17,9 +17,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+import { motion } from 'framer-motion';
+import { DemoModal } from '@/components/chat/DemoModal';
+
 export default function LandingPage() {
   const { user, signInWithGoogle, loading } = useAuth();
   const router = useRouter();
+  const [isDemoOpen, setIsDemoOpen] = React.useState(false);
 
   React.useEffect(() => {
     if (user && !loading) {
@@ -82,32 +86,59 @@ export default function LandingPage() {
             Accounting for modern traders
           </div>
           
-          <h1 className="text-6xl lg:text-8xl font-black tracking-tighter mb-8 leading-[0.9] lg:leading-[0.85]">
+          <motion.h1 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="text-7xl lg:text-9xl font-black tracking-tighter mb-10 leading-[0.85] lg:leading-[0.8]"
+          >
             Accounting is <br className="hidden md:block" />
-            <span className="bg-gradient-to-br from-white via-white to-white/30 bg-clip-text text-transparent">as simple as a</span> <br className="hidden lg:block" />
-            <span className="bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">Telegram chat.</span>
-          </h1>
+            <span className="bg-gradient-to-br from-white via-white to-white/40 bg-clip-text text-transparent">as simple as a</span> <br className="hidden lg:block" />
+            <motion.span 
+              animate={{ 
+                color: ["#60a5fa", "#818cf8", "#60a5fa"],
+              }}
+              transition={{ duration: 4, repeat: Infinity }}
+              className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-500"
+            >
+              Telegram chat.
+            </motion.span>
+          </motion.h1>
           
-          <p className="text-lg lg:text-2xl text-white/40 max-w-2xl mx-auto mb-16 leading-relaxed font-medium">
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-xl lg:text-2xl text-white/40 max-w-2xl mx-auto mb-20 leading-relaxed font-medium"
+          >
             The fastest way for small businesses and traders to track finances, 
             manage invoices, and see profits in real-time.
-          </p>
+          </motion.p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-24">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-24"
+          >
             <button 
               onClick={signInWithGoogle}
-              className="w-full sm:w-auto bg-white text-black font-black px-10 py-5 rounded-[2rem] flex items-center justify-center gap-3 hover:bg-white/90 transition-all shadow-[0_20px_60px_rgba(255,255,255,0.2)] active:scale-95 group relative overflow-hidden"
+              className="w-full sm:w-auto bg-white text-black font-black px-12 py-6 rounded-full flex items-center justify-center gap-3 hover:bg-white/90 transition-all shadow-[0_20px_40px_rgba(255,255,255,0.15)] active:scale-95 group relative overflow-hidden"
             >
-              <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity" />
               <Chrome className="w-6 h-6" />
               Sign in with Google
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
-            <button className="w-full sm:w-auto bg-[#1c1c1e] hover:bg-[#252528] text-white font-black px-10 py-5 rounded-[2rem] border border-white/5 flex items-center justify-center gap-3 transition-all">
+            <button 
+              onClick={() => setIsDemoOpen(true)}
+              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 text-white font-black px-12 py-6 rounded-full border border-white/10 flex items-center justify-center gap-3 transition-all backdrop-blur-md active:scale-95"
+            >
               Watch Demo
-              <ShieldCheck className="w-6 h-6 text-white/20" />
+              <ShieldCheck className="w-5 h-5 text-white/40" />
             </button>
-          </div>
+          </motion.div>
+
+          <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
 
           {/* Social Proof */}
           <div className="pt-20 border-t border-white/5">

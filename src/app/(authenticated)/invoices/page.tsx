@@ -119,19 +119,22 @@ export default function InvoicesPage() {
             <div className="mt-8 pt-6 border-t border-white/5 flex gap-2">
               <Link 
                 href={`/invoices/${inv.id}`}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all border border-white/5"
               >
                 <FileText className="w-4 h-4" /> View
               </Link>
               <Link 
-                href={`/invoices/${inv.id}?print=true`}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+                href={`/invoices/${inv.id}/edit`}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 transition-all border border-white/5"
               >
-                <Printer className="w-4 h-4" /> Print
+                <AlertCircle className="w-4 h-4" /> Edit
               </Link>
-              <button className="p-2.5 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl transition-all">
-                <MoreVertical className="w-4 h-4" />
-              </button>
+              <Link 
+                href={`/invoices/${inv.id}?print=true`}
+                className="p-2.5 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl transition-all border border-white/5"
+              >
+                <Printer className="w-4 h-4" />
+              </Link>
             </div>
           </div>
         ))}
