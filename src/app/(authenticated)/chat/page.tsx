@@ -160,7 +160,9 @@ export default function ChatPage() {
     const botMsg: Message = {
       id: (Date.now() + 1).toString(),
       role: 'bot',
-      content: `I parsed a ${parsedData.type}. Does this look correct?`,
+      content: parsedData.amount > 0 
+        ? `I parsed a ${parsedData.type}. Does this look correct?`
+        : `I found a ${parsedData.type}, but I didn't see an amount. How much did you sell/spend it at?`,
       timestamp: new Date(),
       type: 'transaction_confirm',
       data: parsedData
@@ -271,7 +273,30 @@ export default function ChatPage() {
                          <Calculator className="w-3.5 h-3.5" />
                          <span>Amount</span>
                       </div>
-                      <p className="font-black text-3xl tracking-tighter text-white leading-none">{formatCurrency(msg.data.amount, company?.currency)}</p>
+                      {msg.data.amount > 0 ? (
+                        <p className="font-black text-3xl tracking-tighter text-white leading-none">
+                          {formatCurrency(msg.data.amount, company?.currency)}
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                           <p className="text-red-400 font-black text-xs uppercase italic animate-pulse">Amount not entered</p>
+                           <div className="relative max-w-[140px]">
+                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/20">{company?.currency}</span>
+                             <input 
+                               type="number"
+                               placeholder="0.00"
+                               autoFocus
+                               className="w-full bg-white/5 border border-red-500/20 rounded-xl py-2 pl-10 pr-3 text-sm font-black text-white outline-none focus:ring-1 focus:ring-red-500/30 transition-all font-mono"
+                               onChange={(e) => {
+                                 const val = parseFloat(e.target.value) || 0;
+                                 setMessages(prev => prev.map(m => 
+                                   m.id === msg.id ? { ...m, data: { ...m.data, amount: val } } : m
+                                 ));
+                               }}
+                             />
+                           </div>
+                        </div>
+                      )}
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
@@ -333,7 +358,8 @@ export default function ChatPage() {
                  <div className="flex gap-4 pt-2 relative z-10">
                     <button 
                       onClick={() => confirmTransaction(msg.data, msg.id)}
-                      className="flex-1 bg-white text-black font-black h-14 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/90 active:scale-[0.97] transition-all shadow-2xl shadow-white/10 group/btn"
+                      disabled={!msg.data.amount || msg.data.amount <= 0}
+                      className="flex-1 bg-white text-black font-black h-14 rounded-3xl flex items-center justify-center gap-3 hover:bg-white/90 disabled:opacity-30 disabled:grayscale transition-all shadow-2xl shadow-white/10 group/btn"
                     >
                       <Check className="w-5 h-5 group-hover/btn:scale-125 transition-transform" /> 
                       <span className="uppercase tracking-widest text-xs">Confirm</span>
