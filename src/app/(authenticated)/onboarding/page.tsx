@@ -30,6 +30,24 @@ export default function OnboardingPage() {
     currency: 'NPR',
   });
 
+  React.useEffect(() => {
+    if (user) {
+      checkExistingCompany();
+    }
+  }, [user]);
+
+  const checkExistingCompany = async () => {
+    const { data } = await supabase
+      .from('company_members')
+      .select('company_id')
+      .eq('user_id', user?.id)
+      .maybeSingle();
+    
+    if (data) {
+      router.push('/chat');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
