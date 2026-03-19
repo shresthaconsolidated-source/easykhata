@@ -18,6 +18,7 @@ import {
 import { motion } from 'framer-motion';
 import { DemoModal } from '@/components/chat/DemoModal';
 import { FloatingChatMockup } from '@/components/landing/FloatingChatMockup';
+import { cn } from '@/lib/utils';
 
 export default function LandingPage() {
   const { user, signInWithGoogle, loading } = useAuth();
