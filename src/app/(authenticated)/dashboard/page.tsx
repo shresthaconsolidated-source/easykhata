@@ -240,13 +240,6 @@ export default function DashboardPage() {
           icon={Wallet} 
           color="bg-blue-500 text-blue-500" 
         />
-        <StatCard 
-          title="Total Cashflow" 
-          amount={stats.monthIncome + stats.monthExpense} 
-          previousAmount={stats.prevMonthIncome + stats.prevMonthExpense}
-          icon={PieChartIcon} 
-          color="bg-purple-500 text-purple-500" 
-        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
