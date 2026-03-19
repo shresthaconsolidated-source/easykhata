@@ -14,15 +14,22 @@ import {
   Plus,
   Trash2,
   Settings,
-  ArrowRight
+  ArrowRight,
+  Database,
+  Terminal,
+  AlertTriangle,
+  RefreshCcw,
+  Play
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ClientManagerModal } from '@/components/settings/ClientManagerModal';
 import { InviteModal } from '@/components/settings/InviteModal';
 import { CategoryModal } from '@/components/settings/CategoryModal';
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
+  const router = useRouter();
   const [company, setCompany] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -31,6 +38,13 @@ export default function SettingsPage() {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  
+  // SQL Editor State
+  const [sqlQuery, setSqlQuery] = useState('');
+  const [sqlResult, setSqlResult] = useState<any>(null);
+  const [sqlError, setSqlError] = useState<string | null>(null);
+  const [sqlExecuting, setSqlExecuting] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -41,12 +55,15 @@ export default function SettingsPage() {
   const fetchSettings = async () => {
     const { data: membership } = await supabase
       .from('company_members')
-      .select('company_id, companies(*)')
+      .select('company_id, role, companies(*)')
       .eq('user_id', user?.id)
-      .single();
+      .maybeSingle();
 
-    if (!membership) return;
-    setCompany(membership.companies);
+    if (!membership) {
+      router.push('/onboarding');
+      return;
+    }
+    setCompany({ ...membership.companies, user_role: membership.role });
 
     const companyId = membership.company_id;
 
@@ -86,13 +103,73 @@ export default function SettingsPage() {
     if (!error) fetchSettings();
   };
 
-  if (loading) return null;
+  const handleResetData = async () => {
+    if (!company) return;
+    
+    const confirmed = confirm(
+      "DANGER: This will PERMANENTLY delete your business, including ALL transactions, invoices, and clients. There is no undo.\n\nAre you sure you want to proceed?"
+    );
+
+    if (!confirmed) return;
+
+    const secondConfirm = prompt("To confirm, type 'DELETE' in all caps:");
+    if (secondConfirm !== 'DELETE') return;
+
+    setLoading(true);
+    try {
+      // Deleting the company triggers cascade delete for everything else
+      const { error } = await supabase
+        .from('companies')
+        .delete()
+        .eq('id', company.id);
+
+      if (error) throw error;
+      
+      // Redirect to onboarding
+      router.push('/onboarding');
+    } catch (err: any) {
+      alert(`Error resetting data: ${err.message}`);
+      setLoading(false);
+    }
+  };
+
+  const executeSql = async () => {
+    if (!sqlQuery.trim()) return;
+    setSqlExecuting(true);
+    setSqlError(null);
+    setSqlResult(null);
+    
+    try {
+      // NOTE: Supabase client doesn't support raw SQL easily without RPC.
+      // We will use a generic 'rpc' call if one exists, or just warn the user.
+      // For this prototype, we'll simulate the execution or use specific table logic.
+      
+      const { data, error } = await supabase.rpc('execute_sql_query', { query_text: sqlQuery });
+      
+      if (error) {
+        // Fallback for demo: show error that RPC is missing
+        setSqlError("SQL RPC function not found in database. Please add the 'execute_sql_query' function first.");
+      } else {
+        setSqlResult(data);
+      }
+    } catch (err: any) {
+      setSqlError(err.message);
+    } finally {
+      setSqlExecuting(false);
+    }
+  };
+
+  if (loading) return (
+    <div className="flex items-center justify-center p-20">
+      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12 pb-20 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-4xl mx-auto space-y-12 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-white/40 mt-1">Manage your company Profile and team access.</p>
+        <p className="text-white/40 mt-1">Manage your company profile and team access.</p>
       </div>
 
       {/* Company Info */}
@@ -224,6 +301,109 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* SQL Editor (Advanced) */}
+      <section className="space-y-6 pt-12 border-t border-white/5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Database className="w-5 h-5 text-amber-400" />
+            <h2 className="font-bold text-lg">Advanced SQL Console</h2>
+          </div>
+          <button 
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="text-[10px] font-black uppercase tracking-widest text-white/20 hover:text-white transition-colors"
+          >
+            {showAdvanced ? 'Hide' : 'Show'} Console
+          </button>
+        </div>
+        
+        {showAdvanced && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-top-4">
+            <div className="bg-black/50 p-6 rounded-[2rem] border border-white/5 shadow-inner">
+               <div className="flex items-center gap-2 text-white/30 mb-3 px-1">
+                 <Terminal className="w-3.5 h-3.5" />
+                 <span className="text-[10px] uppercase font-black tracking-widest">Query Console</span>
+               </div>
+               <textarea 
+                  value={sqlQuery}
+                  onChange={(e) => setSqlQuery(e.target.value)}
+                  placeholder="SELECT * FROM transactions WHERE company_id = ..."
+                  className="w-full h-40 bg-black/40 text-emerald-500 font-mono text-sm p-4 rounded-xl border border-white/5 focus:border-emerald-500/30 focus:ring-1 focus:ring-emerald-500/20 outline-none transition-all resize-none"
+               />
+               <div className="flex justify-between items-center mt-4">
+                 <p className="text-[9px] text-white/20 uppercase font-bold tracking-widest px-1">
+                   CAUTION: Raw queries can bypass RLS if using service role.
+                 </p>
+                 <button 
+                   onClick={executeSql}
+                   disabled={sqlExecuting || !sqlQuery.trim()}
+                   className="flex items-center gap-2 px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 disabled:bg-emerald-800 disabled:opacity-50 text-black font-black rounded-xl transition-all active:scale-95"
+                 >
+                   {sqlExecuting ? <RefreshCcw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                   Execute
+                 </button>
+               </div>
+            </div>
+
+            {sqlError && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-500 text-sm font-medium flex gap-3 italic">
+                <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                {sqlError}
+              </div>
+            )}
+
+            {sqlResult && (
+              <div className="bg-[#1c1c1e] rounded-2xl border border-white/5 overflow-x-auto shadow-2xl">
+                 <pre className="p-6 text-xs text-blue-300 font-mono">
+                   {JSON.stringify(sqlResult, null, 2)}
+                 </pre>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* DANGER ZONE */}
+      <section className="pt-12 border-t border-red-500/10">
+        <div className="flex items-center gap-3 mb-6">
+          <AlertTriangle className="w-5 h-5 text-red-500" />
+          <h2 className="font-bold text-lg text-red-500">Danger Zone</h2>
+        </div>
+        
+        <div className="bg-red-500/[0.02] border border-red-500/10 p-10 rounded-[3rem] flex flex-col md:flex-row items-center justify-between gap-8">
+           <div className="max-w-md">
+              <h3 className="font-black text-xl text-white mb-2 italic uppercase tracking-tight">Reset Business Data</h3>
+              <p className="text-white/40 text-sm leading-relaxed">
+                Permanently delete all transactions, invoices, customers, and business settings. Your account stays active, but you'll start fresh.
+              </p>
+           </div>
+           <button 
+              onClick={handleResetData}
+              className="px-10 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white font-black rounded-2xl border border-red-500/20 transition-all active:scale-95 whitespace-nowrap"
+           >
+              Reset All Data
+           </button>
+        </div>
+      </section>
+
+      {/* Account Section */}
+      <section className="pt-12 border-t border-white/5 flex items-center justify-between">
+         <div className="flex items-center gap-4 text-white/40 font-medium">
+           <div className="w-14 h-14 rounded-full border-2 border-white/10 overflow-hidden ring-4 ring-white/5">
+             <img src={user?.user_metadata?.avatar_url || ''} alt="" className="w-full h-full object-cover" />
+           </div>
+           <div>
+             <p className="font-black text-lg text-white tracking-tight">{user?.user_metadata?.full_name}</p>
+             <p className="text-[10px] uppercase tracking-[0.2em]">Live Node Connection</p>
+           </div>
+         </div>
+         <button 
+           onClick={handleSignOut}
+           className="px-10 py-4 bg-white/5 hover:bg-white/10 text-white font-black rounded-2xl border border-white/10 transition-all active:scale-95"
+         >
+           Sign Out
+         </button>
+      </section>
+
       {/* Modals */}
       <ClientManagerModal 
         isOpen={isClientModalOpen} 
@@ -242,25 +422,6 @@ export default function SettingsPage() {
         companyId={company?.id}
         onUpdate={fetchSettings}
       />
-
-      {/* Account Section */}
-      <section className="pt-8 border-t border-white/5 flex items-center justify-between">
-         <div className="flex items-center gap-4 text-white/40">
-           <div className="w-12 h-12 rounded-full border-2 border-white/10 overflow-hidden">
-             <img src={user?.user_metadata?.avatar_url || ''} alt="" className="w-full h-full object-cover" />
-           </div>
-           <div>
-             <p className="font-bold text-white">{user?.user_metadata?.full_name}</p>
-             <p className="text-xs uppercase tracking-widest">Signed in with Google</p>
-           </div>
-         </div>
-         <button 
-           onClick={handleSignOut}
-           className="px-8 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-2xl transition-all shadow-xl shadow-red-500/10 active:scale-95"
-         >
-           Logout
-         </button>
-      </section>
     </div>
   );
 }
