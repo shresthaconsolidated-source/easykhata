@@ -319,8 +319,8 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] max-w-2xl mx-auto rounded-[2.5rem] bg-white/[0.02] border border-white/5 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden relative backdrop-blur-md">
-      <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
+    <div className="flex flex-col h-[calc(100vh-180px)] lg:h-[calc(100vh-140px)] max-w-2xl mx-auto rounded-[1.5rem] lg:rounded-[2.5rem] bg-white/[0.02] border border-white/5 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden relative backdrop-blur-md">
+      <div className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6 lg:space-y-8 scrollbar-hide">
         {messages.length <= 1 ? (
           <div className="h-full flex flex-col items-center justify-center text-center space-y-3 opacity-0 animate-in fade-in duration-1000 fill-mode-forwards">
             <h2 className="text-2xl font-medium tracking-tight text-white/90">Start tracking your business</h2>
@@ -345,7 +345,7 @@ export default function ChatPage() {
               </div>
               
               {msg.type === 'transaction_confirm' && (
-                <div className="mt-4 p-6 bg-white/[0.02] rounded-[2rem] border border-white/10 w-full max-w-[95%] space-y-6 shadow-2xl backdrop-blur-xl relative overflow-hidden group">
+                <div className="mt-4 p-4 lg:p-6 bg-white/[0.02] rounded-[1.5rem] lg:rounded-[2rem] border border-white/10 w-full max-w-[95%] space-y-6 shadow-2xl backdrop-blur-xl relative overflow-hidden group">
                   <div className={cn(
                     "absolute top-0 right-0 w-32 h-32 blur-[80px] -mr-16 -mt-16 opacity-20",
                     msg.data.type === 'income' ? "bg-green-500" : "bg-red-500"
@@ -369,7 +369,7 @@ export default function ChatPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-10 relative z-10 pt-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-10 relative z-10 pt-4">
                     <div className="space-y-6">
                       <div className="space-y-2">
                         <div className="flex items-center gap-2 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
@@ -496,10 +496,10 @@ export default function ChatPage() {
       </div>
 
       {/* Floating Input Bar */}
-      <div className="p-8 pt-0 relative z-20">
+      <div className="p-4 lg:p-8 pt-0 relative z-20">
         <div className="relative group max-w-xl mx-auto">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500"></div>
-          <div className="relative flex flex-col gap-4">
+          <div className="relative flex flex-col gap-3 lg:gap-4">
             <div className="flex-1 bg-[#1a1a1c] rounded-2xl border border-white/10 group-focus-within:border-blue-500/50 transition-all shadow-lg overflow-hidden flex items-center pr-4">
               <input 
                 type="text" 
@@ -507,7 +507,7 @@ export default function ChatPage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Type an expense or income..."
-                className="flex-1 bg-transparent px-6 py-4 text-sm font-medium outline-none placeholder:text-white/10"
+                className="flex-1 bg-transparent px-4 lg:px-6 py-3 lg:py-4 text-sm font-medium outline-none placeholder:text-white/10"
               />
               <button 
                 onClick={handleSend}
@@ -516,10 +516,10 @@ export default function ChatPage() {
                 <Send className="w-4 h-4 text-white" />
               </button>
             </div>
-            <div className="flex gap-4 px-6 text-[9px] font-bold uppercase tracking-[0.2em] text-white/10">
+            <div className="flex gap-4 px-4 lg:px-6 text-[8px] lg:text-[9px] font-bold uppercase tracking-[0.2em] text-white/10">
                <span>Examples:</span>
-               <span className="text-white/20 italic">"Taxi 2000 yesterday"</span>
-               <span className="text-white/20 italic">"Sold goods 5000"</span>
+               <span className="text-white/20 italic">"Taxi 2000"</span>
+               <span className="text-white/20 italic">"Sold 5000"</span>
             </div>
           </div>
         </div>

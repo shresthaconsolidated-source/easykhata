@@ -181,11 +181,11 @@ export default function DashboardPage() {
     const fontSizeClass = isVeryLarge ? 'text-2xl' : isLarge ? 'text-3xl' : 'text-4xl';
 
     return (
-      <div className="bg-[#0b0b0b] p-8 rounded-[2rem] border border-white/[0.03] shadow-2xl relative overflow-hidden group hover:border-white/10 transition-all duration-500">
+      <div className="bg-[#0b0b0b] p-6 lg:p-8 rounded-[2rem] border border-white/[0.03] shadow-2xl relative overflow-hidden group hover:border-white/10 transition-all duration-500">
         <div className={cn("absolute -top-24 -right-24 w-48 h-48 opacity-[0.03] blur-3xl rounded-full bg-gradient-to-br to-transparent", bgGradient)} />
         <div className="flex flex-col relative z-10 h-full justify-between">
           <div>
-            <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{title}</p>
+            <p className="text-white/20 text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] mb-4">{title}</p>
             {isVeryLarge ? (
               <div className="flex flex-col gap-0.5">
                 <span className="text-white/20 text-[10px] font-black uppercase tracking-widest leading-none mb-1">{company?.currency}</span>
@@ -201,7 +201,7 @@ export default function DashboardPage() {
             )}
           </div>
           <div className="mt-8 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-[10px] font-bold tracking-tight">
+            <div className="flex items-center gap-2 text-[9px] lg:text-[10px] font-bold tracking-tight">
                {trend >= 0 ? (
                  <span className="text-emerald-500 flex items-center gap-0.5 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
                    <ArrowUpRight className="w-3 h-3" /> +{trend}%
@@ -213,8 +213,8 @@ export default function DashboardPage() {
                )}
                <span className="text-white/10 uppercase tracking-widest text-[8px] ml-1">vs last month</span>
             </div>
-            <div className={cn("p-2.5 rounded-xl border border-white/5 bg-white/[0.02]", accentClass)}>
-              <Icon className="w-4 h-4 opacity-40" />
+            <div className={cn("p-2 lg:p-2.5 rounded-xl border border-white/5 bg-white/[0.02]", accentClass)}>
+               <Icon className="w-4 h-4 opacity-40" />
             </div>
           </div>
         </div>
@@ -224,9 +224,9 @@ export default function DashboardPage() {
 
   if (loading) return (
     <div className="flex items-center justify-center h-[60vh]">
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 text-center px-6">
         <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
-        <p className="text-white/20 text-xs font-black uppercase tracking-widest">Loading Analytics...</p>
+        <p className="text-white/20 text-[10px] font-black uppercase tracking-widest">Loading Analytics...</p>
       </div>
     </div>
   );
@@ -234,19 +234,19 @@ export default function DashboardPage() {
   const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'];
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex items-end justify-between">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div>
-          <h1 className="text-3xl font-black tracking-tight uppercase">Financial Overview</h1>
-          <p className="text-white/30 font-medium mt-1">Real-time performance metrics for your business.</p>
+          <h1 className="text-2xl lg:text-3xl font-black tracking-tight uppercase">Financial Overview</h1>
+          <p className="text-white/30 text-sm font-medium mt-1">Real-time performance metrics.</p>
         </div>
         <div className="flex items-center gap-4">
-           <div className="relative group">
+           <div className="relative group w-full sm:w-auto">
               <input 
                 type="month" 
                 value={format(selectedDate, 'yyyy-MM')}
                 onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                className="bg-[#1c1c1e] px-5 py-3 rounded-2xl border border-white/10 text-xs font-black uppercase tracking-[0.2em] text-white/60 outline-none hover:border-white/20 transition-all cursor-pointer appearance-none"
+                className="w-full sm:w-auto bg-[#1c1c1e] px-5 py-3 rounded-2xl border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 outline-none hover:border-white/20 transition-all cursor-pointer appearance-none"
               />
               <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none opacity-20">
                 <CalendarIcon className="w-4 h-4" />

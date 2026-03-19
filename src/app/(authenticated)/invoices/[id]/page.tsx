@@ -126,8 +126,9 @@ export default function InvoiceDetailPage() {
         </div>
       </div>
 
-      {/* The Invoice Document */}
-      <div className="max-w-[850px] mx-auto bg-white text-[#1a1f36] shadow-[0_64px_128px_-16px_rgba(0,0,0,0.1)] min-h-[1100px] flex flex-col font-sans print:shadow-none print:p-0 print:mx-0 print:w-full overflow-hidden rounded-sm">
+      {/* The Invoice Document - Wrapped in horizontal scroll for mobile */}
+      <div className="w-full overflow-x-auto pb-12 custom-scrollbar print:overflow-visible">
+        <div className="max-w-[850px] min-w-[800px] md:min-w-[850px] mx-auto bg-white text-[#1a1f36] shadow-[0_64px_128px_-16px_rgba(0,0,0,0.1)] min-h-[1100px] flex flex-col font-sans print:shadow-none print:p-0 print:mx-0 print:w-full overflow-hidden rounded-sm">
         
         {/* Top Branding Header */}
         <div className="bg-[#1a5f7a] p-12 text-white flex justify-between items-center">
@@ -239,6 +240,7 @@ export default function InvoiceDetailPage() {
         </div>
 
       </div>
+    </div>
 
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');

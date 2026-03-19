@@ -184,12 +184,45 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="w-6" />
         </header>
 
-        <main className="flex-1 overflow-y-auto relative custom-scrollbar">
+        <main className="flex-1 overflow-y-auto relative custom-scrollbar pb-24 lg:pb-10">
           <div className="max-w-6xl mx-auto h-full px-4 sm:px-6 md:px-12 py-10">
             {children}
           </div>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="fixed bottom-6 left-6 right-6 z-50 lg:hidden">
+        <div className="bg-[#121214]/80 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-2 flex items-center justify-around shadow-[0_32px_64px_-16px_rgba(0,0,0,1)] ring-1 ring-white/5">
+           {navItems.slice(0, 4).map((item) => {
+             const isActive = pathname === item.href;
+             return (
+               <Link 
+                 key={item.name} 
+                 href={item.href}
+                 className={cn(
+                   "flex flex-col items-center gap-1 p-3 rounded-2xl transition-all duration-300 relative",
+                   isActive ? "text-blue-500 scale-110" : "text-white/30 hover:text-white/60"
+                 )}
+               >
+                 <item.icon className={cn("w-5 h-5", isActive && "drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]")} />
+                 <span className="text-[8px] font-black uppercase tracking-widest">{item.name}</span>
+                 {isActive && (
+                   <div className="absolute -bottom-1 w-1 h-1 bg-blue-500 rounded-full shadow-[0_0_10px_#3b82f6]" />
+                 )}
+               </Link>
+             );
+           })}
+           
+           {/* Add Transaction Button - Center Focus */}
+           <button 
+             onClick={() => router.push('/chat')}
+             className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-[0_12px_24px_-8px_rgba(37,99,235,0.6)] active:scale-90 transition-all group"
+           >
+              <Plus className="w-6 h-6 text-white group-hover:rotate-90 transition-transform duration-500" />
+           </button>
+        </div>
+      </nav>
 
       <style jsx global>{`
         .scale-in { animation: scaleIn 0.3s ease-out; }

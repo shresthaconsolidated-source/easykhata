@@ -129,7 +129,7 @@ export default function PLPage() {
   if (!company) return null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 lg:pb-0">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Profit & Loss</h1>
@@ -177,7 +177,8 @@ export default function PLPage() {
         </div>
       </div>
 
-      <div className="bg-[#0b0b0b] p-6 md:p-8 rounded-[2rem] border border-white/[0.03] shadow-2xl space-y-8 relative overflow-hidden">
+      <div className="w-full overflow-x-auto custom-scrollbar pb-6 lg:pb-0">
+        <div className="bg-[#0b0b0b] p-6 md:p-8 rounded-[2rem] border border-white/[0.03] shadow-2xl space-y-8 relative overflow-hidden min-w-[500px] md:min-w-0">
         {isComparing && (
           <div className="flex justify-end gap-8 pr-4 text-[8px] font-black uppercase tracking-[0.2em] text-white/10">
             <div className="min-w-[80px] text-right">{format(selectedDate, 'MMM yy')}</div>
@@ -270,6 +271,7 @@ export default function PLPage() {
               <BarChart3 className="w-5 h-5" />
             </div>
           </div>
+        </div>
         </div>
       </div>
 
