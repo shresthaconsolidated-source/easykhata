@@ -117,15 +117,18 @@ export default function InvoicesPage() {
             </div>
 
             <div className="mt-8 pt-6 border-t border-white/5 flex gap-2">
-              <button className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all">
-                <Download className="w-4 h-4" /> PDF
-              </button>
-              <button 
-                onClick={() => window.print()}
+              <Link 
+                href={`/invoices/${inv.id}`}
+                className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
+              >
+                <FileText className="w-4 h-4" /> View
+              </Link>
+              <Link 
+                href={`/invoices/${inv.id}?print=true`}
                 className="flex-1 bg-white/5 hover:bg-white/10 text-white/60 font-bold py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 transition-all"
               >
                 <Printer className="w-4 h-4" /> Print
-              </button>
+              </Link>
               <button className="p-2.5 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl transition-all">
                 <MoreVertical className="w-4 h-4" />
               </button>

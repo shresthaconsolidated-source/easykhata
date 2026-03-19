@@ -152,7 +152,7 @@ export default function ChatPage() {
         company_id: company.id,
         user_id: user?.id,
         category_id: data.categoryId,
-        description: data.note,
+        note: data.note,
         amount: data.amount,
         type: data.type,
         date: data.date

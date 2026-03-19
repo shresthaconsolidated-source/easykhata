@@ -51,7 +51,7 @@ export default function AuthenticatedLayout({
     );
   }
 
-  if (pathname === '/onboarding') {
+  if (pathname === '/onboarding' || pathname.startsWith('/invoices/')) {
     return <>{children}</>;
   }
 
