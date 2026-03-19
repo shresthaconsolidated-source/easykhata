@@ -78,44 +78,82 @@ export default function ChatPage() {
   };
 
   const parseMessage = (text: string) => {
-    const amountMatch = text.match(/\d+(\.\d+)?/);
-    const amount = amountMatch ? parseFloat(amountMatch[0]) : 0;
-    
-    let type: 'income' | 'expense' = 'expense';
     const lowerText = text.toLowerCase();
     
-    // Improved type detection
+    // 1. Better Amount Detection
+    // Look for numbers with currency/price indicators first
+    const pricePatterns = [
+      /(?:at|for|rs|npr|usd|inr|@)\s*(\d+(?:\.\d+)?)/i,
+      /(\d+(?:\.\d+)?)\s*(?:rs|npr|usd|inr)/i,
+      /(?:^|\s)\$(\d+(?:\.\d+)?)/i
+    ];
+
+    let foundAmount = 0;
+    for (const pattern of pricePatterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) {
+        foundAmount = parseFloat(match[1]);
+        break;
+      }
+    }
+
+    // If no explicit price indicator, look for all numbers
+    if (foundAmount === 0) {
+      const allNumbers = text.match(/\d+(?:\.\d+)?/g);
+      if (allNumbers) {
+        // If there's only one number, it's likely the amount
+        if (allNumbers.length === 1) {
+          foundAmount = parseFloat(allNumbers[0]);
+        } else {
+          // If multiple numbers, use heuristics
+          // Heuristic: The largest number is usually the amount (prevents quantity mixups like "2 burgers for 500")
+          const numbers = allNumbers.map(n => parseFloat(n));
+          foundAmount = Math.max(...numbers);
+          
+          // Exception: Check if a number is very small and followed by an item name (basic quantity check)
+          // But Max usually works well for simple "X items for Y money"
+        }
+      }
+    }
+
+    // 2. Type Detection
+    let type: 'income' | 'expense' = 'expense';
     if (
       lowerText.includes('received') || 
       lowerText.includes('income') || 
       lowerText.includes('sold') || 
       lowerText.includes('profit') ||
       lowerText.includes('earned') ||
-      lowerText.includes('plus')
+      lowerText.includes('plus') ||
+      lowerText.includes('salary') ||
+      lowerText.includes('sales')
     ) {
       type = 'income';
     }
 
+    // 3. Smart Date Detection
     let date = format(new Date(), 'yyyy-MM-dd');
+    const now = new Date();
+    
     if (lowerText.includes('yesterday')) {
-      date = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+      date = format(subDays(now, 1), 'yyyy-MM-dd');
     } else if (lowerText.includes('day before yesterday')) {
-      date = format(subDays(new Date(), 2), 'yyyy-MM-dd');
-    } else {
-      // Look for specific date mentions like "March 15" or "15th"
-      // Simplified for now, but could be enhanced
+      date = format(subDays(now, 2), 'yyyy-MM-dd');
+    } else if (lowerText.includes('last month')) {
+      date = format(subDays(now, 30), 'yyyy-MM-dd');
+    } else if (lowerText.includes('last week')) {
+      date = format(subDays(now, 7), 'yyyy-MM-dd');
     }
 
-    // Heuristic category matching
+    // 4. Category Matching
     let category = categories.find(c => 
       lowerText.includes(c.name.toLowerCase())
     );
 
     if (!category) {
-      // Premade keywords for auto-categorization
       const keywordMap: Record<string, string> = {
         'taxi': 'Travel', 'bus': 'Travel', 'fuel': 'Travel', 'petrol': 'Travel', 'ride': 'Travel', 'uber': 'Travel', 'pathao': 'Travel',
-        'food': 'Meals', 'dinner': 'Meals', 'lunch': 'Meals', 'breakfast': 'Meals', 'khaja': 'Meals', 'restaurant': 'Meals', 'momo': 'Meals',
+        'food': 'Meals', 'dinner': 'Meals', 'lunch': 'Meals', 'breakfast': 'Meals', 'khaja': 'Meals', 'restaurant': 'Meals', 'momo': 'Meals', 'burger': 'Meals', 'chicken': 'Meals',
         'rent': 'Housing', 'electricity': 'Utilities', 'water': 'Utilities', 'internet': 'Utilities', 'wifi': 'Utilities',
         'salary': 'Salary', 'sold': 'Sales', 'sale': 'Sales', 'bonus': 'Bonus'
       };
@@ -128,17 +166,16 @@ export default function ChatPage() {
       }
     }
 
-    // If still no category and text is like "taxi 200", we could assume "taxi" is the potential category name
     const potentialCategoryName = (!category && text.split(' ').length > 0) ? text.split(' ')[0] : null;
 
     return {
-      amount,
+      amount: foundAmount,
       type,
       date,
       categoryId: category?.id || null,
       categoryName: category?.name || 'Other',
       potentialCategoryName: potentialCategoryName,
-      note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today|day before/gi, '').trim()
+      note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today|day before|at|for|last|month|week/gi, '').trim()
     };
   };
 
