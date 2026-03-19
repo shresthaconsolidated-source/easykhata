@@ -413,7 +413,20 @@ export default function ChatPage() {
                                  {categories.filter(c => c.type === msg.data.type || !c.type).map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                               </select>
                            </div>
-                           <p className="font-bold text-[9px] text-yellow-400/60 italic leading-tight">Couldn't auto-detect category.</p>
+                           <div className="flex items-center gap-2">
+                              <input 
+                                type="text"
+                                placeholder="New category name..."
+                                className="bg-white/5 border border-white/10 rounded-xl py-1.5 px-3 text-[10px] font-bold text-white placeholder:text-white/20 outline-none hover:bg-white/10 transition-all flex-1"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    const val = (e.currentTarget as HTMLInputElement).value;
+                                    if (val.trim()) createCategory(val.trim(), msg.data.type, msg.id);
+                                  }
+                                }}
+                              />
+                              <p className="font-bold text-[8px] text-white/20 uppercase tracking-tighter">Enter to add</p>
+                           </div>
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
@@ -434,7 +447,12 @@ export default function ChatPage() {
                       <CalendarIcon className="w-3 h-3" />
                       <span className="text-[10px] font-black uppercase tracking-widest">Date</span>
                     </div>
-                    <p className="font-black text-[10px] text-white/40 uppercase tracking-widest italic">{msg.data.date}</p>
+                    <input 
+                      type="date"
+                      value={msg.data.date}
+                      onChange={(e) => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, data: { ...m.data, date: e.target.value } } : m))}
+                      className="bg-transparent text-white/40 font-black text-[10px] uppercase tracking-widest outline-none cursor-pointer hover:text-white/60 transition-colors text-right"
+                    />
                   </div>
 
                   <div className="flex gap-4 pt-4 relative z-10">
