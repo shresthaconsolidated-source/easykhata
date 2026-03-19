@@ -84,74 +84,66 @@ export default function InvoiceDetailPage() {
       </div>
 
       {/* The Invoice Document */}
-      <div className="max-w-[800px] mx-auto bg-white text-black p-12 shadow-2xl min-h-[1050px] flex flex-col font-serif print:shadow-none print:p-8 print:mx-0 print:w-full">
+      <div className="max-w-[850px] mx-auto bg-white text-[#1a1f36] p-16 shadow-2xl min-h-[1100px] flex flex-col font-sans print:shadow-none print:p-12 print:mx-0 print:w-full">
         
         {/* Header Section */}
-        <div className="border-b-2 border-black pb-8 mb-8">
-           <div className="flex justify-between items-start">
-              <div>
-                 <h1 className="text-4xl font-black uppercase tracking-tighter mb-2">{company?.name}</h1>
-                 <p className="text-sm whitespace-pre-line text-black/70">
-                   {company?.address}
-                   {company?.pan && `\nPAN: ${company.pan}`}
-                 </p>
+        <div className="flex justify-between items-start mb-20">
+           <div>
+              <h1 className="text-2xl font-bold tracking-tight mb-4 text-[#1a1f36]">{company?.name}</h1>
+              <div className="text-[13px] text-[#4f566b] space-y-1.5 leading-relaxed">
+                 <p className="whitespace-pre-line">{company?.address}</p>
+                 {company?.pan && <p className="font-medium pt-1 text-[#1a1f36]">PAN: {company.pan}</p>}
               </div>
-              <div className="text-right">
-                 <h2 className="text-2xl font-black text-blue-800 uppercase tracking-widest mb-4">Tax Invoice</h2>
-                 <div className="space-y-1 text-sm">
-                   <p><span className="font-bold">Invoice No:</span> {invoice.invoice_number}</p>
-                   <p><span className="font-bold">Date:</span> {format(new Date(invoice.date), 'dd-MM-yyyy')}</p>
+           </div>
+           <div className="text-right">
+              <h2 className="text-[11px] font-black uppercase tracking-[0.2em] text-[#3b82f6] mb-8">Invoice</h2>
+              <div className="space-y-4 text-[13px]">
+                 <div>
+                    <p className="text-[#a3acb9] uppercase tracking-wider text-[10px] font-bold mb-1">Invoice Number</p>
+                    <p className="font-semibold text-[#1a1f36]">{invoice.invoice_number}</p>
+                 </div>
+                 <div className="flex gap-8 justify-end">
+                    <div>
+                      <p className="text-[#a3acb9] uppercase tracking-wider text-[10px] font-bold mb-1">Date Issued</p>
+                      <p className="font-medium">{format(new Date(invoice.date), 'MMMM dd, yyyy')}</p>
+                    </div>
+                    <div>
+                      <p className="text-[#a3acb9] uppercase tracking-wider text-[10px] font-bold mb-1">Due Date</p>
+                      <p className="font-medium">{format(new Date(invoice.due_date), 'MMMM dd, yyyy')}</p>
+                    </div>
                  </div>
               </div>
            </div>
         </div>
 
-        {/* Bill To & Details Section */}
-        <div className="grid grid-cols-2 gap-12 mb-12">
-           <div className="border border-black p-4">
-              <h3 className="text-xs font-black uppercase bg-black text-white px-2 py-1 mb-3 inline-block">Bill To:</h3>
-              <div className="space-y-1">
-                 <p className="font-bold text-lg leading-none mb-1">{invoice.client_name}</p>
-                 <p className="text-sm text-black/70 whitespace-pre-line leading-tight">{invoice.client_address}</p>
-                 {invoice.client_pan && <p className="text-sm font-bold mt-2">PAN: {invoice.client_pan}</p>}
-              </div>
-           </div>
-           <div className="flex flex-col justify-end text-right space-y-2 text-sm italic">
-              <p><span className="font-bold not-italic">Due Date:</span> {format(new Date(invoice.due_date), 'dd-MM-yyyy')}</p>
-              <p><span className="font-bold not-italic">Status:</span> <span className="uppercase">{invoice.status}</span></p>
+        {/* Bill To Section */}
+        <div className="mb-20">
+           <h3 className="text-[#a3acb9] uppercase tracking-wider text-[10px] font-bold mb-4">Bill To</h3>
+           <div className="text-[13px] text-[#1a1f36]">
+              <p className="font-bold text-base mb-2">{invoice.client_name}</p>
+              <p className="text-[#4f566b] whitespace-pre-line leading-relaxed max-w-xs">{invoice.client_address}</p>
+              {invoice.client_pan && <p className="font-medium mt-3">PAN: {invoice.client_pan}</p>}
            </div>
         </div>
 
         {/* Items Table */}
         <div className="flex-1">
-           <table className="w-full border-collapse border border-black">
+           <table className="w-full">
               <thead>
-                 <tr className="bg-gray-100 text-xs font-black uppercase tracking-wider">
-                    <th className="border border-black p-3 text-left w-12">SN</th>
-                    <th className="border border-black p-3 text-left">Description</th>
-                    <th className="border border-black p-3 text-center w-20">Qty</th>
-                    <th className="border border-black p-3 text-right w-32">Rate ({company?.currency})</th>
-                    <th className="border border-black p-3 text-right w-32">Amount ({company?.currency})</th>
+                 <tr className="text-[11px] font-bold uppercase tracking-wider text-[#a3acb9] border-b border-[#e3e8ee]">
+                    <th className="py-4 text-left font-bold">Description</th>
+                    <th className="py-4 text-center w-16">Qty</th>
+                    <th className="py-4 text-right w-32">Rate</th>
+                    <th className="py-4 text-right w-32">Amount</th>
                  </tr>
               </thead>
-              <tbody>
-                 {items.map((item, idx) => (
-                    <tr key={item.id} className="text-sm">
-                       <td className="border border-black p-3 text-center">{idx + 1}</td>
-                       <td className="border border-black p-3 font-medium">{item.description}</td>
-                       <td className="border border-black p-3 text-center">{item.quantity}</td>
-                       <td className="border border-black p-3 text-right">{Number(item.rate).toLocaleString()}</td>
-                       <td className="border border-black p-3 text-right font-bold">{Number(item.amount).toLocaleString()}</td>
-                    </tr>
-                 ))}
-                 {/* Fill empty rows for aesthetics */}
-                 {Array.from({ length: Math.max(0, 10 - items.length) }).map((_, i) => (
-                    <tr key={`empty-${i}`} className="h-10">
-                       <td className="border border-black p-3"></td>
-                       <td className="border border-black p-3"></td>
-                       <td className="border border-black p-3"></td>
-                       <td className="border border-black p-3"></td>
-                       <td className="border border-black p-3"></td>
+              <tbody className="divide-y divide-[#f7f9fc]">
+                 {items.map((item) => (
+                    <tr key={item.id} className="text-[13px]">
+                       <td className="py-5 font-medium text-[#1a1f36]">{item.description}</td>
+                       <td className="py-5 text-center text-[#4f566b]">{item.quantity}</td>
+                       <td className="py-5 text-right text-[#4f566b]">{Number(item.rate).toLocaleString()}</td>
+                       <td className="py-5 text-right font-semibold text-[#1a1f36]">{Number(item.amount).toLocaleString()}</td>
                     </tr>
                  ))}
               </tbody>
@@ -159,39 +151,47 @@ export default function InvoiceDetailPage() {
         </div>
 
         {/* Totals Section */}
-        <div className="mt-8 flex justify-end">
-           <div className="w-full max-w-[300px] border border-black overflow-hidden">
-              <div className="flex justify-between p-3 border-b border-black text-sm">
-                 <span className="font-bold">Subtotal:</span>
-                 <span>{company?.currency} {Number(invoice.subtotal).toLocaleString()}</span>
+        <div className="mt-12 flex justify-end border-t border-[#e3e8ee] pt-12">
+           <div className="w-full max-w-[280px] space-y-4">
+              <div className="flex justify-between text-[13px]">
+                 <span className="text-[#4f566b]">Subtotal</span>
+                 <span className="font-medium text-[#1a1f36]">{company?.currency} {Number(invoice.subtotal).toLocaleString()}</span>
               </div>
-              <div className="flex justify-between p-3 border-b border-black text-sm italic">
-                 <span>Discount:</span>
-                 <span>- {Number(invoice.discount).toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between p-3 bg-black text-white font-black text-lg">
-                 <span className="uppercase tracking-tighter">Grand Total:</span>
-                 <span>{company?.currency} {Number(invoice.total).toLocaleString()}</span>
+              {Number(invoice.discount) > 0 && (
+                <div className="flex justify-between text-[13px] text-[#4f566b]">
+                   <span>Discount</span>
+                   <span>- {Number(invoice.discount).toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-baseline pt-4 border-t border-[#f7f9fc]">
+                 <span className="text-[11px] font-black uppercase tracking-wider text-[#1a1f36]">Amount Due</span>
+                 <span className="text-2xl font-bold text-[#1a1f36]">{company?.currency} {Number(invoice.total).toLocaleString()}</span>
               </div>
            </div>
         </div>
 
         {/* Footer Section */}
-        <div className="mt-12 pt-12 flex justify-between items-end border-t border-black/10">
-           <div className="text-[10px] text-black/40 italic">
-              Generated by easyKhata - Simple Digital Bookkeeping
+        <div className="mt-32 pt-12 flex justify-between items-end border-t border-[#f7f9fc]">
+           <div className="text-[11px] text-[#a3acb9] font-medium">
+              Thank you for your business.
            </div>
-           <div className="text-center w-48">
-              <div className="border-b border-black w-full mb-2 h-12 flex items-end justify-center">
+           <div className="text-right">
+              <div className="mb-4 h-12 flex items-end justify-end">
                  {/* Sign space */}
               </div>
-              <p className="text-[10px] font-black uppercase tracking-wider">Authorised Signatory</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#1a1f36]">Authorized Signature</p>
            </div>
         </div>
 
       </div>
 
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        
+        .font-sans {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        }
+
         @media print {
           body { background: white !important; }
           .print\\:hidden { display: none !important; }

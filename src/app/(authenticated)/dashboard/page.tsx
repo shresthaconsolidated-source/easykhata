@@ -168,25 +168,40 @@ export default function DashboardPage() {
 
   const StatCard = ({ title, amount, previousAmount, icon: Icon, color }: any) => {
     const trend = calculateTrend(amount, previousAmount);
+    // Map colors to subtle monochromatic accents
+    const accentClass = color.includes('green') ? 'text-emerald-500' : color.includes('red') ? 'text-rose-500' : 'text-blue-500';
+    const bgGradient = color.includes('green') ? 'from-emerald-500/5' : color.includes('red') ? 'from-rose-500/5' : 'from-blue-500/5';
+
     return (
-      <div className="bg-[#1c1c1e] p-6 rounded-3xl border border-white/5 shadow-xl relative overflow-hidden group">
-        <div className={cn("absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 opacity-10 blur-3xl rounded-full", color)} />
-        <div className="flex items-start justify-between relative z-10">
+      <div className="bg-[#0b0b0b] p-8 rounded-[2rem] border border-white/[0.03] shadow-2xl relative overflow-hidden group hover:border-white/10 transition-all duration-500">
+        <div className={cn("absolute -top-24 -right-24 w-48 h-48 opacity-[0.03] blur-3xl rounded-full bg-gradient-to-br to-transparent", bgGradient)} />
+        
+        <div className="flex flex-col relative z-10 h-full justify-between">
           <div>
-            <p className="text-white/30 text-[10px] font-bold uppercase tracking-wider mb-2">{title}</p>
-            <h3 className="text-xl font-bold tracking-tight">{company?.currency} {amount.toLocaleString()}</h3>
+            <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.2em] mb-4">{title}</p>
+            <h3 className="text-4xl font-bold tracking-tighter text-white/90">
+              <span className="text-white/20 font-medium mr-1">{company?.currency}</span>
+              {amount.toLocaleString()}
+            </h3>
           </div>
-          <div className={cn("p-2.5 rounded-xl ring-1 ring-white/10", color.replace('bg-', 'bg-').replace('text-', 'text-').concat('/10'))}>
-            <Icon className={cn("w-5 h-5", color.replace('bg-', 'text-'))} />
+
+          <div className="mt-8 flex items-center justify-between">
+            <div className="flex items-center gap-2 text-[10px] font-bold tracking-tight">
+               {trend >= 0 ? (
+                 <span className="text-emerald-500 flex items-center gap-0.5 bg-emerald-500/10 px-2 py-1 rounded-lg border border-emerald-500/20">
+                   <ArrowUpRight className="w-3 h-3" /> +{trend}%
+                 </span>
+               ) : (
+                 <span className="text-rose-500 flex items-center gap-0.5 bg-rose-500/10 px-2 py-1 rounded-lg border border-rose-500/20">
+                   <ArrowDownRight className="w-3 h-3" /> {trend}%
+                 </span>
+               )}
+               <span className="text-white/10 uppercase tracking-widest text-[8px] ml-1">vs last month</span>
+            </div>
+            <div className={cn("p-2.5 rounded-xl border border-white/5 bg-white/[0.02]", accentClass)}>
+              <Icon className="w-4 h-4 opacity-40" />
+            </div>
           </div>
-        </div>
-        <div className="mt-4 flex items-center gap-1.5 text-[10px] font-bold tracking-wider">
-           {trend >= 0 ? (
-             <span className="text-green-400 flex items-center gap-0.5"><ArrowUpRight className="w-3.5 h-3.5" /> +{trend}%</span>
-           ) : (
-             <span className="text-red-400 flex items-center gap-0.5"><ArrowDownRight className="w-3.5 h-3.5" /> {trend}%</span>
-           )}
-           <span className="text-white/10 uppercase tracking-widest text-[9px]">vs last month</span>
         </div>
       </div>
     );
@@ -194,7 +209,8 @@ export default function DashboardPage() {
 
   if (loading) return null;
 
-  const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#10b981', '#6366f1'];
+  // Use a softer, more professional color palette
+  const COLORS = ['#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899'];
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -218,20 +234,20 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <StatCard 
           title="Income Generated" 
           amount={stats.monthIncome} 
           previousAmount={stats.prevMonthIncome}
           icon={TrendingUp} 
-          color="bg-green-500 text-green-500" 
+          color="bg-emerald-500 text-emerald-500" 
         />
         <StatCard 
           title="Expenses Logged" 
           amount={stats.monthExpense} 
           previousAmount={stats.prevMonthExpense}
           icon={TrendingDown} 
-          color="bg-red-500 text-red-500" 
+          color="bg-rose-500 text-rose-500" 
         />
         <StatCard 
           title="Net Monthly Profit" 
@@ -242,76 +258,85 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Trend Chart */}
-        <div className="lg:col-span-2 bg-[#1c1c1e] p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
-          <div className="flex items-center justify-between mb-8">
-             <h3 className="font-bold text-lg">Income vs Expense</h3>
-             <div className="flex gap-4 text-xs font-medium">
-               <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Income</div>
-               <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-white/10" /> Expense</div>
+        <div className="lg:col-span-2 bg-[#0b0b0b] p-10 rounded-[3rem] border border-white/[0.03] shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+          <div className="flex items-center justify-between mb-10">
+             <div>
+               <h3 className="font-bold text-lg tracking-tight">Income vs Expense</h3>
+               <p className="text-[10px] text-white/20 uppercase tracking-[0.2em] mt-1 font-bold">6 Month Trend Analysis</p>
+             </div>
+             <div className="flex gap-6 text-[10px] font-black uppercase tracking-widest">
+               <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-blue-500" /> <span className="text-white/40">Income</span></div>
+               <div className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-white/10" /> <span className="text-white/40">Expense</span></div>
              </div>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="h-[320px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff" strokeOpacity={0.02} />
                 <XAxis 
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#ffffff30', fontSize: 12 }}
-                  dy={10}
+                  tick={{ fill: '#ffffff', fontSize: 10, fontWeight: 700, opacity: 0.2 }}
+                  dy={15}
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#ffffff30', fontSize: 12 }}
+                  tick={{ fill: '#ffffff', fontSize: 10, fontWeight: 700, opacity: 0.2 }}
                 />
                 <Tooltip 
-                  cursor={{ fill: '#ffffff05' }}
-                  contentStyle={{ backgroundColor: '#1c1c1e', border: '1px solid #ffffff10', borderRadius: '16px' }}
+                  cursor={{ fill: 'white', opacity: 0.02 }}
+                  contentStyle={{ backgroundColor: '#0b0b0b', border: '1px solid #ffffff05', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}
                 />
-                <Bar dataKey="income" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={24} />
-                <Bar dataKey="expense" fill="#ffffff10" radius={[6, 6, 0, 0]} barSize={24} />
+                <Bar dataKey="income" fill="#3b82f6" fillOpacity={0.8} radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="expense" fill="#ffffff" fillOpacity={0.05} radius={[4, 4, 0, 0]} barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
         {/* Categories Pie */}
-        <div className="bg-[#1c1c1e] p-8 rounded-[2.5rem] border border-white/5 shadow-2xl flex flex-col">
-          <h3 className="font-bold text-lg mb-8">Expenses by Category</h3>
-          <div className="flex-1 h-[250px] min-h-[250px] w-full">
+        <div className="bg-[#0b0b0b] p-10 rounded-[3rem] border border-white/[0.03] shadow-2xl flex flex-col relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+          <h3 className="font-bold text-lg tracking-tight mb-10">Categories</h3>
+          <div className="flex-1 h-[250px] min-h-[250px] w-full relative">
             <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={categoryData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    paddingAngle={8}
+                    innerRadius={65}
+                    outerRadius={85}
+                    paddingAngle={10}
                     dataKey="value"
                   >
                     {categoryData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} fillOpacity={0.7} stroke="none" />
                     ))}
                   </Pie>
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#1c1c1e', border: '1px solid #ffffff10', borderRadius: '16px' }}
+                    contentStyle={{ backgroundColor: '#0b0b0b', border: '1px solid #ffffff05', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold' }}
                   />
                 </PieChart>
             </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+               <span className="text-[10px] font-black text-white/10 uppercase tracking-[0.2em]">Total</span>
+               <span className="text-xl font-bold text-white/40 tracking-tighter mt-1">{company?.currency}{stats.monthExpense.toLocaleString()}</span>
+            </div>
           </div>
-          <div className="space-y-3 mt-4">
+          <div className="space-y-4 mt-8">
             {categoryData.slice(0, 4).map((cat, i) => (
-              <div key={cat.name} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                  <span className="text-white/60">{cat.name}</span>
+              <div key={cat.name} className="flex items-center justify-between text-[11px] font-bold">
+                <div className="flex items-center gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length], opacity: 0.5 }} />
+                  <span className="text-white/30 uppercase tracking-widest">{cat.name}</span>
                 </div>
-                <span className="font-bold">{company?.currency} {cat.value.toLocaleString()}</span>
+                <span className="text-white/60">{company?.currency} {cat.value.toLocaleString()}</span>
               </div>
             ))}
           </div>
