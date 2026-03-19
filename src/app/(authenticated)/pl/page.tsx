@@ -10,7 +10,8 @@ import {
   TrendingDown, 
   Calendar as CalendarIcon,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Check as CheckIcon
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
@@ -276,7 +277,7 @@ export default function PLPage() {
       </div>
 
       <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[2rem] flex items-center justify-center gap-3 text-white/10 text-[10px] font-black uppercase tracking-[0.4em]">
-        <Check className="w-4 h-4" /> End of Financial Report
+        <CheckIcon className="w-4 h-4" /> End of Financial Report
       </div>
     </div>
   );
