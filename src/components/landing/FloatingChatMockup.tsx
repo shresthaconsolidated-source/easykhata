@@ -8,15 +8,16 @@ export const FloatingChatMockup = () => {
   return (
     <div className="relative w-full max-w-[500px] mx-auto perspective-1000 mt-20 lg:mt-0">
       {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-600/10 blur-[120px] rounded-full -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-gradient-to-tr from-blue-600/20 via-indigo-500/10 to-transparent blur-[120px] rounded-full -z-10" />
 
       {/* Main Container */}
       <motion.div
         initial={{ y: 40, opacity: 0, rotateX: 10 }}
         animate={{ y: 0, opacity: 1, rotateX: 0 }}
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-[#0c0c0d] border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden backdrop-blur-3xl ring-1 ring-white/5"
+        className="bg-[#0a0a0b] border border-white/5 rounded-[2.5rem] shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden backdrop-blur-3xl ring-1 ring-white/10 relative"
       >
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
         {/* Chat Header */}
         <div className="px-8 py-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -112,7 +113,7 @@ export const FloatingChatMockup = () => {
       <motion.div 
         animate={{ y: [0, -10, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -top-12 -right-12 p-6 bg-[#0c0c0d]/80 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl shadow-blue-500/5 hidden lg:block"
+        className="absolute -top-12 -right-12 p-6 bg-[#0c0c0d]/80 backdrop-blur-xl rounded-3xl border border-white/5 shadow-2xl shadow-blue-500/10 hidden lg:block ring-1 ring-white/10"
       >
          <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
