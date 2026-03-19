@@ -108,7 +108,7 @@ export default function ChatPage() {
       amount,
       type,
       date,
-      categoryId: category?.id,
+      categoryId: category?.id || null,
       categoryName: category?.name || 'Other',
       note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today/gi, '').trim()
     };
@@ -159,7 +159,8 @@ export default function ChatPage() {
       });
 
     if (error) {
-      alert('Error saving transaction');
+      console.error('Transaction Error:', error);
+      alert(`Error saving transaction: ${error.message}`);
       return;
     }
 
