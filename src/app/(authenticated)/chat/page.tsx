@@ -182,6 +182,37 @@ export default function ChatPage() {
   const handleSend = async () => {
     if (!input.trim()) return;
 
+    // Check if we're correcting a previous amount-less transaction
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.role === 'bot' && lastMsg.type === 'transaction_confirm' && (!lastMsg.data.amount || lastMsg.data.amount <= 0)) {
+      const amountMatch = input.match(/\d+(\.\d+)?/);
+      if (amountMatch) {
+         const newAmount = parseFloat(amountMatch[0]);
+         const userMsg: Message = {
+           id: Date.now().toString(),
+           role: 'user',
+           content: input,
+           timestamp: new Date()
+         };
+         
+         setMessages(prev => {
+           const newMsgs = [...prev, userMsg];
+           const lastBotMsgIndex = newMsgs.findLastIndex(m => m.id === lastMsg.id);
+           if (lastBotMsgIndex !== -1) {
+             newMsgs[lastBotMsgIndex] = {
+               ...newMsgs[lastBotMsgIndex],
+               content: `Got it! I've updated the amount. Does this look correct now?`,
+               data: { ...newMsgs[lastBotMsgIndex].data, amount: newAmount }
+             };
+           }
+           return newMsgs;
+         });
+         
+         setInput('');
+         return;
+      }
+    }
+
     const userMsg: Message = {
       id: Date.now().toString(),
       role: 'user',
@@ -315,24 +346,7 @@ export default function ChatPage() {
                           {formatCurrency(msg.data.amount, company?.currency)}
                         </p>
                       ) : (
-                        <div className="space-y-3">
-                           <p className="text-red-400 font-black text-xs uppercase italic animate-pulse">Amount not entered</p>
-                           <div className="relative max-w-[140px]">
-                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/20">{company?.currency}</span>
-                             <input 
-                               type="number"
-                               placeholder="0.00"
-                               autoFocus
-                               className="w-full bg-white/5 border border-red-500/20 rounded-xl py-2 pl-10 pr-3 text-sm font-black text-white outline-none focus:ring-1 focus:ring-red-500/30 transition-all font-mono"
-                               onChange={(e) => {
-                                 const val = parseFloat(e.target.value) || 0;
-                                 setMessages(prev => prev.map(m => 
-                                   m.id === msg.id ? { ...m, data: { ...m.data, amount: val } } : m
-                                 ));
-                               }}
-                             />
-                           </div>
-                        </div>
+                        <p className="text-red-400 font-black text-xs uppercase italic animate-pulse">Amount not entered</p>
                       )}
                     </div>
                     <div className="space-y-2">
