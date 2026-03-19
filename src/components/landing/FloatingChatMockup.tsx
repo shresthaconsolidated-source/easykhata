@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, BarChart3, PieChart, Send, ArrowUpRight, ArrowDownRight, LayoutDashboard, Settings, Activity } from 'lucide-react';
+import { Sparkles, BarChart3, PieChart, Send, ArrowUpRight, ArrowDownRight, LayoutDashboard, Settings, Activity, CheckCircle2 } from 'lucide-react';
 
 export const FloatingChatMockup = () => {
   return (
