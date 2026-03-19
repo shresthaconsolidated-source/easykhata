@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Send, Shield } from 'lucide-react';
+import { X, Mail, Link as LinkIcon, Shield, Copy, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface InviteModalProps {
@@ -14,22 +14,55 @@ interface InviteModalProps {
 export const InviteModal = ({ isOpen, onClose, companyId }: InviteModalProps) => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [inviteLink, setInviteLink] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [errorText, setErrorText] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorText('');
     
-    // In a real app, this would send an email and create a pending member
-    // For now, we simulate success
-    await new Promise(r => setTimeout(r, 1000));
-    setSent(true);
+    // Insert into invitations table
+    const { data, error } = await supabase
+      .from('invitations')
+      .insert({ email, company_id: companyId, role: 'member' })
+      .select('token')
+      .single();
+
+    if (error) {
+      console.error("Error creating invite:", error);
+      setErrorText("Failed to generate invitation. Ensure the invitations table exists.");
+      setLoading(false);
+      return;
+    }
+
+    if (data && data.token) {
+      const link = `${window.location.origin}/invite?token=${data.token}`;
+      setInviteLink(link);
+    }
     setLoading(false);
+  };
+
+  const handleCopy = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+  };
+
+  const resetAndClose = () => {
+    onClose();
     setTimeout(() => {
-      onClose();
-      setSent(false);
+      setInviteLink('');
       setEmail('');
-    }, 2000);
+      setErrorText('');
+      setCopied(false);
+    }, 300);
   };
 
   return (
@@ -40,7 +73,7 @@ export const InviteModal = ({ isOpen, onClose, companyId }: InviteModalProps) =>
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={resetAndClose}
             className="absolute inset-0 bg-black/80 backdrop-blur-xl"
           />
           
@@ -50,17 +83,44 @@ export const InviteModal = ({ isOpen, onClose, companyId }: InviteModalProps) =>
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             className="relative w-full max-w-md bg-[#0c0c0d] border border-white/10 rounded-[3rem] overflow-hidden shadow-2xl p-8 lg:p-12 text-center"
           >
-            <button onClick={onClose} className="absolute top-8 right-8 text-white/20 hover:text-white transition-colors">
+            <button onClick={resetAndClose} className="absolute top-8 right-8 text-white/20 hover:text-white transition-colors">
               <X className="w-6 h-6" />
             </button>
 
-            {sent ? (
-              <div className="py-10 space-y-4 animate-in fade-in zoom-in duration-500">
-                 <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto text-green-400">
-                    <Send className="w-10 h-10" />
+            {inviteLink ? (
+              <div className="py-6 space-y-6 animate-in fade-in zoom-in duration-500">
+                 <div className="w-20 h-20 rounded-[2rem] bg-emerald-500/10 flex items-center justify-center mx-auto text-emerald-400 ring-1 ring-emerald-500/20">
+                    <LinkIcon className="w-8 h-8" />
                  </div>
-                 <h2 className="text-2xl font-black text-white">Invite Sent!</h2>
-                 <p className="text-white/40 font-medium">We've sent an invitation to {email}.</p>
+                 <div>
+                   <h2 className="text-2xl font-black text-white mb-2">Invite Link Ready!</h2>
+                   <p className="text-white/40 font-medium text-sm px-4">Copy and send this secure link to {email}. It will grant them access to your company.</p>
+                 </div>
+                 
+                 <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500/20 to-blue-500/20 rounded-2xl blur opacity-20 group-hover:opacity-40 transition-opacity" />
+                    <div className="relative flex items-center bg-white/[0.03] border border-white/10 p-3 rounded-2xl">
+                       <input 
+                         type="text" 
+                         value={inviteLink} 
+                         readOnly 
+                         className="flex-1 bg-transparent text-white/80 text-sm font-medium outline-none px-2 truncate"
+                       />
+                       <button 
+                         onClick={handleCopy}
+                         className="ml-2 flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all active:scale-95"
+                       >
+                         {copied ? <><Check className="w-3.5 h-3.5 text-emerald-400" /> Copied</> : <><Copy className="w-3.5 h-3.5" /> Copy</>}
+                       </button>
+                    </div>
+                 </div>
+                 
+                 <button 
+                   onClick={resetAndClose}
+                   className="w-full font-bold text-white/50 hover:text-white transition-colors text-sm pt-4"
+                 >
+                   Done
+                 </button>
               </div>
             ) : (
               <>
@@ -68,7 +128,7 @@ export const InviteModal = ({ isOpen, onClose, companyId }: InviteModalProps) =>
                     <Shield className="w-8 h-8" />
                  </div>
                  <h2 className="text-3xl font-black tracking-tight text-white mb-2 italic">Invite Team</h2>
-                 <p className="text-white/40 text-sm font-medium mb-10">Add reliable members to your company.</p>
+                 <p className="text-white/40 text-sm font-medium mb-10">Generate a secure link to invite members.</p>
 
                  <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-1 text-left">
@@ -79,18 +139,23 @@ export const InviteModal = ({ isOpen, onClose, companyId }: InviteModalProps) =>
                             required 
                             type="email"
                             placeholder="colleague@company.com"
-                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-5 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-medium"
+                            className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-12 pr-5 focus:ring-2 focus:ring-blue-500/50 outline-none text-white transition-all font-medium"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                           />
                        </div>
                     </div>
+                    
+                    {errorText && (
+                      <p className="text-xs font-bold text-red-400 text-left bg-red-500/10 p-3 rounded-xl border border-red-500/20">{errorText}</p>
+                    )}
+
                     <button 
                       type="submit" 
-                      disabled={loading}
+                      disabled={loading || !email}
                       className="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl transition-all shadow-xl shadow-blue-500/10 disabled:opacity-50"
                     >
-                      {loading ? 'Sending...' : 'Send Invitation'}
+                      {loading ? 'Generating Link...' : 'Generate Invite Link'}
                     </button>
                  </form>
               </>
