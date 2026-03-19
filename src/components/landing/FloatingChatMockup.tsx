@@ -2,128 +2,159 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { Sparkles, BarChart3, PieChart, Send, ArrowRight, ArrowUpRight, ArrowDownRight, LayoutDashboard, Settings } from 'lucide-react';
 
 export const FloatingChatMockup = () => {
   return (
-    <div className="relative w-full max-w-[500px] mx-auto perspective-1000 mt-20 lg:mt-0">
-      {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] bg-gradient-to-tr from-blue-600/20 via-indigo-500/10 to-transparent blur-[120px] rounded-full -z-10" />
+    <div className="relative w-full mx-auto perspective-1000 mt-20">
+      {/* Massive Background Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] sm:w-[800px] sm:h-[600px] lg:w-[1200px] lg:h-[800px] bg-blue-600/15 blur-[120px] lg:blur-[200px] rounded-[100%] -z-10 pointer-events-none" />
 
-      {/* Main Container */}
+      {/* Main App Container */}
       <motion.div
-        initial={{ y: 40, opacity: 0, rotateX: 10 }}
-        animate={{ y: 0, opacity: 1, rotateX: 0 }}
-        transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="bg-[#0a0a0b] border border-white/5 rounded-[2.5rem] shadow-[0_0_80px_rgba(0,0,0,0.8)] overflow-hidden backdrop-blur-3xl ring-1 ring-white/10 relative"
+        initial={{ y: 60, opacity: 0, scale: 0.95 }}
+        whileInView={{ y: 0, opacity: 1, scale: 1 }}
+        viewport={{ once: true, margin: "-100px" }}
+        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full h-[500px] sm:h-[600px] lg:h-[700px] bg-[#0a0a0b]/80 border border-white/10 rounded-[2rem] shadow-[0_40px_100px_rgba(0,0,0,1)] overflow-hidden backdrop-blur-3xl ring-1 ring-white/5 relative flex flex-col md:flex-row"
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-        {/* Chat Header */}
-        <div className="px-8 py-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
-          <div className="flex items-center gap-3">
-             <div className="w-10 h-10 rounded-full bg-blue-600/20 flex items-center justify-center border border-blue-500/20">
-                <Sparkles className="w-5 h-5 text-blue-400" />
-             </div>
-             <div>
-                <p className="text-sm font-black text-white/90 tracking-tight">AI Bookkeeper</p>
-                <div className="flex items-center gap-1.5">
-                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                   <p className="text-[10px] font-bold text-white/30 uppercase tracking-widest">Always Active</p>
-                </div>
-             </div>
-          </div>
-          <div className="flex gap-1.5">
-             <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
-             <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
-             <div className="w-1.5 h-1.5 rounded-full bg-white/10" />
-          </div>
-        </div>
+        {/* Top Glare Edge */}
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
 
-        {/* Chat Feed */}
-        <div className="p-8 space-y-8">
-           {/* User Message */}
-           <motion.div 
-             initial={{ opacity: 0, x: 20 }}
-             animate={{ opacity: 1, x: 0 }}
-             transition={{ delay: 0.5 }}
-             className="flex flex-col items-end gap-2"
-           >
-              <div className="bg-blue-600 px-5 py-3.5 rounded-[1.2rem] rounded-tr-none text-sm font-bold shadow-lg shadow-blue-900/20 max-w-[80%]">
-                 Taxi 2000 yesterday
+        {/* Sidebar (Hidden on small screens) */}
+        <div className="hidden md:flex flex-col w-64 border-r border-white/5 bg-white/[0.01] p-6">
+           <div className="flex items-center gap-2 mb-12">
+              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                 <div className="w-3 h-3 bg-black rounded-full" />
               </div>
-              <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Sent 14:02</p>
-           </motion.div>
-
-           {/* AI Response */}
-           <motion.div 
-             initial={{ opacity: 0, x: -20 }}
-             animate={{ opacity: 1, x: 0 }}
-             transition={{ delay: 1 }}
-             className="flex flex-col items-start gap-4 w-full"
-           >
-              <div className="bg-white/[0.03] border border-white/10 p-5 rounded-[1.5rem] rounded-tl-none w-full shadow-2xl">
-                 <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="w-3 h-3 text-blue-400" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-white/40 italic">Instant Detection</span>
-                 </div>
-                 
-                 <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                       <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl">
-                          <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Amount</p>
-                          <p className="text-xl font-black tracking-tighter text-white/90">₹2,000.00</p>
-                       </div>
-                       <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl">
-                          <p className="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] mb-1 text-right">Date</p>
-                          <p className="text-xs font-black tracking-tight text-white/70 text-right">Mar 18, 2026</p>
-                       </div>
-                    </div>
-
-                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-between group cursor-pointer hover:bg-blue-500/20 transition-all duration-300">
-                       <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                             <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-                          </div>
-                          <div>
-                             <p className="text-[8px] font-black text-blue-400/50 uppercase tracking-[0.2em]">Category</p>
-                             <p className="text-xs font-black text-white/90">Transportation</p>
-                          </div>
-                       </div>
-                       <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                          <ArrowRight className="w-4 h-4" />
-                       </div>
-                    </div>
-                 </div>
-              </div>
-              <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Processed in 0.4s</p>
-           </motion.div>
-        </div>
-
-        {/* Input Bar Placeholder */}
-        <div className="px-8 py-6 bg-gradient-to-t from-black/40 to-transparent border-t border-white/5">
-           <div className="h-12 w-full bg-white/[0.03] border border-white/10 rounded-full flex items-center px-6 gap-3">
-              <div className="w-4 h-4 rounded-full bg-white/10" />
-              <div className="h-2 w-32 bg-white/10 rounded-full" />
-              <div className="ml-auto w-8 h-8 rounded-full bg-white/5" />
+              <span className="text-xl font-bold tracking-tight text-white">easyKhata</span>
            </div>
-        </div>
-      </motion.div>
 
-      {/* Floating Elements Around */}
-      <motion.div 
-        animate={{ y: [0, -10, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute -top-12 -right-12 p-6 bg-[#0c0c0d]/80 backdrop-blur-xl rounded-3xl border border-white/5 shadow-2xl shadow-blue-500/10 hidden lg:block ring-1 ring-white/10"
-      >
-         <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
-               <div className="w-2 h-2 rounded-full bg-emerald-400" />
+           <div className="space-y-2">
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/[0.05] text-white border border-white/5">
+                 <LayoutDashboard className="w-5 h-5 text-blue-400" />
+                 <span className="font-semibold text-sm">Dashboard</span>
+              </div>
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/40 hover:text-white transition-colors cursor-pointer">
+                 <BarChart3 className="w-5 h-5" />
+                 <span className="font-semibold text-sm">Transactions</span>
+              </div>
+              <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/40 hover:text-white transition-colors cursor-pointer">
+                 <PieChart className="w-5 h-5" />
+                 <span className="font-semibold text-sm">Reports</span>
+              </div>
+           </div>
+           
+           <div className="mt-auto flex items-center gap-3 px-4 py-3 rounded-xl text-white/40 hover:text-white transition-colors cursor-pointer">
+               <Settings className="w-5 h-5" />
+               <span className="font-semibold text-sm">Settings</span>
             </div>
-            <div>
-               <p className="text-[8px] font-black text-white/30 uppercase tracking-[0.2em] mb-0.5 text-left">P&L Status</p>
-               <p className="text-xs font-black text-emerald-400">+$12,400.00</p>
-            </div>
-         </div>
+        </div>
+
+        {/* Main Dashboard Area */}
+        <div className="flex-1 flex flex-col relative overflow-hidden">
+           {/* Topbar */}
+           <div className="h-20 border-b border-white/5 bg-white/[0.01] px-8 flex items-center justify-between">
+              <div>
+                 <h2 className="text-lg font-bold text-white tracking-tight">Overview</h2>
+                 <p className="text-xs text-white/40 font-medium">March 2026</p>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                 <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10" />
+              </div>
+           </div>
+
+           {/* Metrics Grid */}
+           <div className="p-8 grid grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 shadow-inner backdrop-blur-sm group hover:bg-white/[0.04] transition-colors cursor-default">
+                 <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm font-semibold text-white/50">Total Revenue</p>
+                    <div className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-xs font-bold flex items-center gap-1">
+                       <ArrowUpRight className="w-3 h-3" /> 12.5%
+                    </div>
+                 </div>
+                 <h3 className="text-3xl font-bold tracking-tight text-white mb-1">₹145,200</h3>
+                 <p className="text-xs text-white/30 truncate">+$18,200 this month</p>
+              </div>
+              
+              <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 shadow-inner backdrop-blur-sm group hover:bg-white/[0.04] transition-colors cursor-default">
+                 <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm font-semibold text-white/50">Total Expenses</p>
+                    <div className="px-2 py-1 rounded-md bg-red-500/10 text-red-400 text-xs font-bold flex items-center gap-1">
+                       <ArrowDownRight className="w-3 h-3" /> 4.2%
+                    </div>
+                 </div>
+                 <h3 className="text-3xl font-bold tracking-tight text-white mb-1">₹41,800</h3>
+                 <p className="text-xs text-white/30 truncate">+$2,400 this month</p>
+              </div>
+
+              <div className="hidden lg:block p-6 rounded-2xl bg-white/[0.02] border border-white/5 shadow-inner backdrop-blur-sm group hover:bg-white/[0.04] transition-colors cursor-default">
+                 <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm font-semibold text-white/50">Net Profit</p>
+                 </div>
+                 <h3 className="text-3xl font-bold tracking-tight text-blue-400 mb-1">₹103,400</h3>
+                 <p className="text-xs text-white/30 truncate">71% Margin</p>
+              </div>
+           </div>
+
+           {/* Central Chat Overlay / Input Area (Floating at bottom right) */}
+           <motion.div 
+             initial={{ y: 50, opacity: 0 }}
+             animate={{ y: 0, opacity: 1 }}
+             transition={{ delay: 0.8, duration: 0.8 }}
+             className="absolute bottom-6 right-6 lg:bottom-10 lg:right-10 w-[calc(100%-48px)] lg:w-[400px] bg-[#0c0c0d]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.8),_0_0_20px_rgba(59,130,246,0.1)] ring-1 ring-white/5 flex flex-col overflow-hidden"
+           >
+              {/* Chat Header */}
+              <div className="px-5 py-4 border-b border-white/5 flex items-center gap-3 bg-white/[0.02]">
+                 <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center border border-blue-500/20">
+                    <Sparkles className="w-4 h-4 text-blue-400" />
+                 </div>
+                 <div>
+                    <h4 className="text-sm font-bold text-white tracking-tight">AI Assistant</h4>
+                    <p className="text-[10px] uppercase tracking-widest text-emerald-400 font-semibold">Online</p>
+                 </div>
+              </div>
+
+              {/* Chat Content */}
+              <div className="p-5 space-y-5">
+                 <div className="flex flex-col items-end gap-1.5">
+                    <div className="px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-2xl rounded-tr-sm shadow-md shadow-blue-900/20">
+                       Taxi 2000 yesterday
+                    </div>
+                 </div>
+
+                 <div className="flex flex-col items-start gap-3 w-full">
+                    <div className="p-4 bg-white/[0.03] border border-white/5 rounded-2xl rounded-tl-sm w-[90%] lg:w-[85%]">
+                       <div className="flex items-center gap-2 mb-3 cursor-default">
+                          <Sparkles className="w-3.5 h-3.5 text-blue-400" />
+                          <span className="text-xs font-semibold text-white/80">Expense Recorded</span>
+                       </div>
+                       
+                       <div className="flex items-center gap-3 p-3 bg-black/40 rounded-xl border border-white/5">
+                          <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-xl shrink-0">
+                             🚕
+                          </div>
+                          <div className="min-w-0 pr-2">
+                             <p className="text-sm font-bold text-white truncate">₹2,000.00</p>
+                             <p className="text-xs text-white/40 truncate">Transportation • Yesterday</p>
+                          </div>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+
+              {/* Chat Input */}
+              <div className="px-5 pb-5 pt-2">
+                 <div className="flex items-center gap-2 p-1.5 pl-4 bg-white/[0.03] border border-white/10 rounded-full hover:bg-white/[0.05] hover:border-white/20 transition-colors">
+                    <p className="text-sm text-white/20 font-medium flex-1 cursor-text select-none">Ask or log something...</p>
+                    <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform cursor-pointer shadow-[0_0_10px_rgba(255,255,255,0.2)]">
+                       <Send className="w-4 h-4 text-black ml-0.5" />
+                    </div>
+                 </div>
+              </div>
+           </motion.div>
+        </div>
       </motion.div>
     </div>
   );
