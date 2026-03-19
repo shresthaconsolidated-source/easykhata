@@ -163,7 +163,7 @@ export default function OnboardingPage() {
               <div className="relative">
                 <Coins className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                 <select 
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-11 pr-4 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-medium appearance-none"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-11 pr-4 focus:ring-2 focus:ring-blue-500/50 outline-none transition-all font-medium appearance-none [&>option]:bg-[#1c1c1e] [&>option]:text-white"
                   value={formData.currency}
                   onChange={(e) => setFormData({...formData, currency: e.target.value})}
                 >

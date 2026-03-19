@@ -291,7 +291,7 @@ export default function ChatPage() {
                                 </button>
                               )}
                               <select 
-                                className="bg-white/5 border border-white/10 rounded-xl py-1.5 px-3 text-[10px] font-bold text-white/60 outline-none hover:bg-white/10 transition-all cursor-pointer flex-1 min-w-[120px]"
+                                className="bg-white/5 border border-white/10 rounded-xl py-1.5 px-3 text-[10px] font-bold text-white/60 outline-none hover:bg-white/10 transition-all cursor-pointer flex-1 min-w-[120px] [&>option]:bg-[#1c1c1e] [&>option]:text-white"
                                 onChange={(e) => {
                                   const cat = categories.find(c => c.id === e.target.value);
                                   if (cat) {
