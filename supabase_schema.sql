@@ -129,6 +129,8 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Companies: Members can see their companies
 CREATE POLICY "Members can view their companies" ON companies
   FOR SELECT USING (is_member_of(id));
+CREATE POLICY "Authenticated users can create companies" ON companies
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 CREATE POLICY "Owners can update their companies" ON companies
   FOR UPDATE USING (
     EXISTS (
@@ -142,6 +144,8 @@ CREATE POLICY "Owners can update their companies" ON companies
 -- Company members: Members can see fellow members
 CREATE POLICY "Members can view company membership" ON company_members
   FOR SELECT USING (is_member_of(company_id));
+CREATE POLICY "Authenticated users can join as owner" ON company_members
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Categories: Members can manage categories for their company
 CREATE POLICY "Members can view company categories" ON categories

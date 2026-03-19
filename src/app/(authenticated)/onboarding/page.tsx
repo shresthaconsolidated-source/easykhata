@@ -44,6 +44,7 @@ export default function OnboardingPage() {
           address: formData.address,
           pan: formData.pan,
           currency: formData.currency,
+          created_by: user.id,
         })
         .select()
         .single();
