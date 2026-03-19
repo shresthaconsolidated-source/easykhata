@@ -58,120 +58,158 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#070708] text-white selection:bg-blue-500/30 overflow-x-hidden">
-      {/* Background Mesh Gradients */}
-      <div className="fixed inset-0 -z-10 overflow-hidden bg-[#0a0a0b]">
+      {/* Background Ultimate Mesh */}
+      <div className="fixed inset-0 -z-10 overflow-hidden bg-[#050505]">
         <motion.div 
           animate={{ 
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
-            x: [0, 100, 0],
-            y: [0, 50, 0]
+            scale: [1, 1.4, 1],
+            x: ['-20%', '20%', '-20%'],
+            y: ['-20%', '10%', '-20%'],
           }}
-          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] bg-blue-600/20 blur-[120px] rounded-full" 
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_20%_20%,_rgba(37,99,235,0.15)_0%,_transparent_50%)] blur-[100px]" 
         />
         <motion.div 
           animate={{ 
             scale: [1.2, 1, 1.2],
-            rotate: [90, 0, 90],
-            x: [0, -100, 0],
-            y: [0, -50, 0]
+            x: ['20%', '-20%', '20%'],
+            y: ['20%', '-10%', '20%'],
           }}
-          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
-          className="absolute -bottom-[20%] -right-[10%] w-[60%] h-[60%] bg-indigo-600/10 blur-[120px] rounded-full" 
+          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_80%_80%,_rgba(99,102,241,0.1)_0%,_transparent_50%)] blur-[100px]" 
         />
         <motion.div 
           animate={{ 
-            opacity: [0.3, 0.6, 0.3],
-            scale: [1, 1.5, 1]
+            opacity: [0.2, 0.4, 0.2],
           }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[40%] h-[40%] bg-purple-600/5 blur-[150px] rounded-full" 
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_rgba(168,85,247,0.05)_0%,_transparent_70%)] blur-[150px]" 
         />
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none brightness-50 contrast-150" />
+        {/* Grain Texture */}
+        <div className="absolute inset-0 bg-[#050505] opacity-[0.03] pointer-events-none brightness-150 contrast-125 mix-blend-overlay" style={{ backgroundImage: `url("https://grainy-gradients.vercel.app/noise.svg")` }} />
       </div>
 
-      {/* Nav */}
-      <nav className="max-w-7xl mx-auto px-6 py-10 flex items-center justify-between relative z-50">
-         <motion.div 
-           initial={{ opacity: 0, x: -20 }}
-           animate={{ opacity: 1, x: 0 }}
-           className="flex items-center gap-4"
+      {/* Nav - Obsidian Style */}
+      <div className="fixed top-6 inset-x-0 z-[100] px-6 flex justify-center">
+         <motion.nav 
+           initial={{ y: -20, opacity: 0 }}
+           animate={{ y: 0, opacity: 1 }}
+           className="bg-white/[0.03] backdrop-blur-3xl border border-white/5 px-8 py-4 rounded-[2rem] flex items-center gap-12 shadow-[0_20px_50px_rgba(0,0,0,0.5)] ring-1 ring-white/5"
          >
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-2xl shadow-blue-500/40 relative group">
-               <div className="absolute inset-0 rounded-2xl bg-white/20 blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
-               <div className="w-5 h-5 bg-white rounded-full shadow-inner relative z-10" />
+            <div className="flex items-center gap-4 group cursor-pointer">
+               <div className="relative w-10 h-10">
+                  <div className="absolute inset-0 bg-blue-500 blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
+                  <div className="relative w-full h-full rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center overflow-hidden border border-white/20">
+                     <div className="w-4 h-4 bg-white rounded-full shadow-[0_0_15px_rgba(255,255,255,0.8)]" />
+                     <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                  </div>
+               </div>
+               <div className="flex flex-col">
+                  <span className="text-xl font-black tracking-[-0.05em] leading-none mb-0.5">easyKhata</span>
+                  <span className="text-[7px] font-black uppercase tracking-[0.4em] text-blue-500/80">Intelligent Ledger</span>
+               </div>
             </div>
-            <div className="flex flex-col">
-               <span className="text-2xl font-black tracking-tighter leading-none">easyKhata</span>
-               <span className="text-[8px] font-black uppercase tracking-[0.3em] text-blue-500/60 mt-1">Free Forever</span>
+
+            <div className="hidden md:flex items-center gap-8 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+               <a href="#features" className="hover:text-white transition-colors">Platform</a>
+               <a href="#demo" className="hover:text-white transition-colors">Success Stories</a>
+               <span className="px-3 py-1 bg-white/5 rounded-lg border border-white/5 text-blue-400">Public Beta</span>
             </div>
-         </motion.div>
-         <motion.button 
-           initial={{ opacity: 0, x: 20 }}
-           animate={{ opacity: 1, x: 0 }}
-           onClick={signInWithGoogle}
-           className="hidden md:flex items-center gap-2 text-xs font-black uppercase tracking-widest text-white/40 hover:text-white py-3 px-8 border border-white/5 hover:border-white/20 bg-white/5 rounded-2xl transition-all backdrop-blur-xl"
-         >
-           Log In
-         </motion.button>
-      </nav>
+
+            <button 
+              onClick={signInWithGoogle}
+              className="text-[10px] font-black uppercase tracking-[0.2em] bg-white text-black px-6 py-3 rounded-xl hover:bg-white/90 transition-all active:scale-95 shadow-xl"
+            >
+              Sign In
+            </button>
+         </motion.nav>
+      </div>
 
       {/* Hero Section */}
-      <div className="relative pt-12 pb-24 lg:pt-24 lg:pb-32">
+      <div className="relative pt-48 pb-32 lg:pt-64 lg:pb-48">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-blue-500/5 border border-blue-500/20 text-[10px] font-black uppercase tracking-[0.2em] mb-10 text-blue-400 shadow-[0_0_40px_rgba(59,130,246,0.1)]">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white/[0.03] border border-white/5 text-[9px] font-black uppercase tracking-[0.3em] mb-12 text-blue-400/80 backdrop-blur-xl shadow-2xl"
+          >
             <Sparkles className="w-4 h-4" />
             Accounting for modern traders
-          </div>
+          </motion.div>
           
-          <motion.h1 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            className="text-7xl lg:text-[10rem] font-black tracking-[-0.05em] mb-12 leading-[0.8] lg:leading-[0.75] perspective-1000"
-          >
-            <span className="block bg-gradient-to-b from-white to-white/60 bg-clip-text text-transparent">Accounting</span>
-            <span className="block bg-gradient-to-b from-white/80 to-white/40 bg-clip-text text-transparent opacity-50">Simplified.</span>
-          </motion.h1>
+          <div className="relative mb-16">
+            <motion.h1 
+              initial={{ opacity: 0, scale: 0.98, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+              className="text-8xl lg:text-[12rem] font-black tracking-[-0.08em] leading-[0.75] lg:leading-[0.7] perspective-1000"
+            >
+              <span className="block text-white">Accounting</span>
+              <span className="block bg-gradient-to-b from-white/40 to-white/5 bg-clip-text text-transparent">Simplified.</span>
+            </motion.h1>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80%] h-full bg-blue-500/5 blur-[120px] -z-10" />
+          </div>
           
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            className="text-xl lg:text-3xl text-white/40 max-w-3xl mx-auto mb-20 leading-tight font-medium tracking-tight"
+            transition={{ delay: 0.5, duration: 1 }}
+            className="text-2xl lg:text-4xl text-white/30 max-w-4xl mx-auto mb-24 leading-tight font-medium tracking-tight px-4"
           >
-            Record, track, and analyze your finances through a <br className="hidden md:block" />
-            <span className="text-blue-500/80">familiar chat interface.</span> No jargon, just results.
+            Record, track, and analyze your digital empire <br className="hidden md:block" />
+            through a <span className="text-white/80 italic font-black">conversational engine.</span>
           </motion.p>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-8 mb-32"
+            className="flex flex-col sm:flex-row items-center justify-center gap-10 mb-40"
           >
-            <button 
-              onClick={signInWithGoogle}
-              className="w-full sm:w-auto bg-white text-black font-black px-14 py-7 rounded-2xl flex items-center justify-center gap-4 hover:bg-white/90 transition-all shadow-[0_30px_60px_rgba(255,255,255,0.15)] active:scale-95 group relative overflow-hidden"
-            >
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shimmer" />
-              <Chrome className="w-6 h-6" />
-              <span className="text-sm uppercase tracking-[0.2em]">Start for Free</span>
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
-            </button>
+            <div className="relative group">
+               <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25 group-hover:opacity-100 transition duration-1000 group-hover:duration-200" />
+               <button 
+                 onClick={signInWithGoogle}
+                 className="relative w-full sm:w-auto bg-white text-black font-black px-12 py-6 rounded-2xl flex items-center justify-center gap-4 hover:shadow-2xl transition-all active:scale-[0.98] overflow-hidden"
+               >
+                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                 <Chrome className="w-5 h-5" />
+                 <span className="text-[11px] uppercase tracking-[0.25em]">Initialize Platform</span>
+                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+               </button>
+            </div>
+
             <button 
               onClick={() => setIsDemoOpen(true)}
-              className="w-full sm:w-auto bg-white/5 hover:bg-white/10 text-white font-black px-14 py-7 rounded-2xl border border-white/10 flex items-center justify-center gap-4 transition-all backdrop-blur-3xl active:scale-95 group"
+              className="w-full sm:w-auto bg-white/[0.03] backdrop-blur-xl border border-white/5 text-white/60 font-black px-12 py-6 rounded-2xl flex items-center justify-center gap-4 hover:bg-white/[0.08] hover:text-white transition-all active:scale-[0.98] group"
             >
-               <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                 <Play className="w-3 h-3 fill-current ml-0.5" />
-               </div>
-               <span className="text-sm uppercase tracking-[0.2em]">Quick Demo</span>
+              <div className="p-2 rounded-lg bg-white/5 group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-colors">
+                <Play className="w-4 h-4" />
+              </div>
+              <span className="text-[11px] uppercase tracking-[0.25em]">Watch System Demo</span>
             </button>
           </motion.div>
 
-          <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
+          {/* Social Proof / Minimalist Logos */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.3 }}
+            transition={{ delay: 1, duration: 2 }}
+            className="flex flex-wrap justify-center items-center gap-16 lg:gap-32 grayscale"
+          >
+             <div className="flex items-center gap-3 font-black tracking-tighter text-2xl uppercase italic opacity-40 hover:opacity-100 transition-opacity">
+                Matrix
+             </div>
+             <div className="flex items-center gap-2 font-thin text-3xl tracking-[0.2em] uppercase opacity-40 hover:opacity-100 transition-opacity">
+                Vortex
+             </div>
+             <div className="flex items-center gap-1 font-black text-2xl tracking-tighter opacity-40 hover:opacity-100 transition-opacity">
+                <div className="w-6 h-6 rounded-full border-4 border-white" /> ION
+             </div>
+             <div className="flex items-center gap-3 font-black tracking-widest text-xl uppercase opacity-40 hover:opacity-100 transition-opacity">
+                Zenith
+             </div>
+          </motion.div>
 
           <motion.div 
             initial={{ opacity: 0 }}
@@ -195,6 +233,8 @@ export default function LandingPage() {
           </motion.div>
         </div>
       </div>
+
+      <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
 
       {/* Features Grid */}
       <div className="max-w-7xl mx-auto px-6 py-32 relative">
@@ -233,8 +273,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-20">
            <div className="space-y-6">
               <div className="flex items-center gap-3">
-                 <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center">
-                    <div className="w-3 h-3 bg-black rounded-full" />
+                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center p-0.5">
+                    <div className="w-full h-full bg-black rounded-[9px] flex items-center justify-center">
+                       <div className="w-3 h-3 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]" />
+                    </div>
                  </div>
                  <span className="text-xl font-black tracking-tighter">easyKhata</span>
               </div>
