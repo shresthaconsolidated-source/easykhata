@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { ClientManagerModal } from '@/components/settings/ClientManagerModal';
 import { InviteModal } from '@/components/settings/InviteModal';
 import { CategoryModal } from '@/components/settings/CategoryModal';
+import { DeleteCompanyModal } from '@/components/settings/DeleteCompanyModal';
 import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
@@ -38,6 +39,7 @@ export default function SettingsPage() {
   const [isClientModalOpen, setIsClientModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
   // SQL Editor State
   const [sqlQuery, setSqlQuery] = useState('');
@@ -106,16 +108,6 @@ export default function SettingsPage() {
   const handleResetData = async () => {
     if (!company) return;
     
-    const confirmed = confirm(
-      "DANGER: This will PERMANENTLY delete your business, including ALL transactions, invoices, and clients. There is no undo.\n\nAre you sure you want to proceed?"
-    );
-
-    if (!confirmed) return;
-
-    const secondConfirm = prompt("To confirm, type 'DELETE' in all caps:");
-    if (secondConfirm !== 'DELETE') return;
-
-    setLoading(true);
     try {
       // Deleting the company triggers cascade delete for everything else
       const { error } = await supabase
@@ -129,7 +121,6 @@ export default function SettingsPage() {
       router.push('/onboarding');
     } catch (err: any) {
       alert(`Error resetting data: ${err.message}`);
-      setLoading(false);
     }
   };
 
@@ -377,7 +368,7 @@ export default function SettingsPage() {
               </p>
            </div>
            <button 
-              onClick={handleResetData}
+              onClick={() => setIsDeleteModalOpen(true)}
               className="px-10 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white font-black rounded-2xl border border-red-500/20 transition-all active:scale-95 whitespace-nowrap"
            >
               Reset All Data
@@ -421,6 +412,12 @@ export default function SettingsPage() {
         onClose={() => setIsCategoryModalOpen(false)}
         companyId={company?.id}
         onUpdate={fetchSettings}
+      />
+      <DeleteCompanyModal 
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleResetData}
+        companyName={company?.name || 'Your Company'}
       />
     </div>
   );
