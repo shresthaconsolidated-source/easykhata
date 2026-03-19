@@ -106,12 +106,33 @@ export default function DashboardPage() {
     const catData = Array.from(categoryMap.entries()).map(([name, value]) => ({ name, value }));
     setCategoryData(catData);
 
-    // 5. Monthly Trend (Placeholder for now, could be last 6 months)
-    setChartData([
-      { name: format(subMonths(new Date(), 2), 'MMM'), income: 45000, expense: 32000 },
-      { name: format(subMonths(new Date(), 1), 'MMM'), income: 52000, expense: 38000 },
-      { name: format(new Date(), 'MMM'), income: mInc, expense: mExp },
-    ]);
+    // 5. Monthly Trend (Real data for last 3 months)
+    const months = [subMonths(new Date(), 2), subMonths(new Date(), 1), new Date()];
+    const trendData = await Promise.all(months.map(async (m) => {
+      const start = format(startOfMonth(m), 'yyyy-MM-dd');
+      const end = format(endOfMonth(m), 'yyyy-MM-dd');
+      
+      const { data } = await supabase
+        .from('transactions')
+        .select('amount, type')
+        .eq('company_id', companyId)
+        .gte('date', start)
+        .lte('date', end);
+      
+      let inc = 0, exp = 0;
+      data?.forEach(t => {
+        if (t.type === 'income') inc += Number(t.amount);
+        else exp += Number(t.amount);
+      });
+      
+      return {
+        name: format(m, 'MMM'),
+        income: inc,
+        expense: exp
+      };
+    }));
+
+    setChartData(trendData);
 
     setLoading(false);
   };
