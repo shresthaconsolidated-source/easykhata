@@ -354,18 +354,28 @@ export default function ChatPage() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-10 relative z-10 pt-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
-                         <Calculator className="w-3.5 h-3.5" />
-                         <span>Amount</span>
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
+                           <Calculator className="w-3.5 h-3.5" />
+                           <span>Amount</span>
+                        </div>
+                        {msg.data.amount > 0 ? (
+                          <p className="font-black text-3xl tracking-tighter text-white leading-none">
+                            {formatCurrency(msg.data.amount, company?.currency)}
+                          </p>
+                        ) : (
+                          <p className="text-red-400 font-black text-xs uppercase italic animate-pulse">Amount not entered</p>
+                        )}
                       </div>
-                      {msg.data.amount > 0 ? (
-                        <p className="font-black text-3xl tracking-tighter text-white leading-none">
-                          {formatCurrency(msg.data.amount, company?.currency)}
-                        </p>
-                      ) : (
-                        <p className="text-red-400 font-black text-xs uppercase italic animate-pulse">Amount not entered</p>
-                      )}
+
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
+                           <Package className="w-3.5 h-3.5" />
+                           <span>Quantity</span>
+                        </div>
+                        <p className="font-black text-sm text-white/80 uppercase tracking-tight">{msg.data.quantity || 1}</p>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
