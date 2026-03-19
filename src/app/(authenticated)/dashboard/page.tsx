@@ -1,0 +1,266 @@
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
+import { formatCurrency, cn } from '@/lib/utils';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  Wallet, 
+  ArrowUpRight, 
+  ArrowDownRight,
+  PieChart as PieChartIcon
+} from 'lucide-react';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  Cell,
+  PieChart,
+  Pie
+} from 'recharts';
+import { startOfMonth, endOfMonth, format, subMonths } from 'date-fns';
+
+export default function DashboardPage() {
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    todayIncome: 0,
+    todayExpense: 0,
+    monthIncome: 0,
+    monthExpense: 0,
+    netProfit: 0
+  });
+  const [chartData, setChartData] = useState<any[]>([]);
+  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [company, setCompany] = useState<any>(null);
+
+  useEffect(() => {
+    if (user) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    const { data: membership } = await supabase
+      .from('company_members')
+      .select('company_id, companies(*)')
+      .eq('user_id', user?.id)
+      .single();
+
+    if (!membership) return;
+    setCompany(membership.companies);
+
+    const companyId = membership.company_id;
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+    const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+
+    // 1. Fetch Today's Stats
+    const { data: todayTransactions } = await supabase
+      .from('transactions')
+      .select('amount, type')
+      .eq('company_id', companyId)
+      .eq('date', today);
+
+    // 2. Fetch Monthly Stats
+    const { data: monthTransactions } = await supabase
+      .from('transactions')
+      .select('amount, type, category_id, categories(name)')
+      .eq('company_id', companyId)
+      .gte('date', monthStart)
+      .lte('date', monthEnd);
+
+    // 3. Process Stats
+    let tInc = 0, tExp = 0, mInc = 0, mExp = 0;
+    todayTransactions?.forEach(t => {
+       if (t.type === 'income') tInc += Number(t.amount);
+       else tExp += Number(t.amount);
+    });
+
+    const categoryMap = new Map();
+    monthTransactions?.forEach(t => {
+      const amt = Number(t.amount);
+      if (t.type === 'income') mInc += amt;
+      else {
+        mExp += amt;
+        const catName = t.categories?.name || 'Misc';
+        categoryMap.set(catName, (categoryMap.get(catName) || 0) + amt);
+      }
+    });
+
+    setStats({
+      todayIncome: tInc,
+      todayExpense: tExp,
+      monthIncome: mInc,
+      monthExpense: mExp,
+      netProfit: mInc - mExp
+    });
+
+    // 4. Category Chart Data
+    const catData = Array.from(categoryMap.entries()).map(([name, value]) => ({ name, value }));
+    setCategoryData(catData);
+
+    // 5. Monthly Trend (Placeholder for now, could be last 6 months)
+    setChartData([
+      { name: format(subMonths(new Date(), 2), 'MMM'), income: 45000, expense: 32000 },
+      { name: format(subMonths(new Date(), 1), 'MMM'), income: 52000, expense: 38000 },
+      { name: format(new Date(), 'MMM'), income: mInc, expense: mExp },
+    ]);
+
+    setLoading(false);
+  };
+
+  const StatCard = ({ title, amount, icon: Icon, trend, color }: any) => (
+    <div className="bg-[#1c1c1e] p-6 rounded-3xl border border-white/5 shadow-xl relative overflow-hidden group">
+      <div className={cn("absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 opacity-10 blur-3xl rounded-full", color)} />
+      <div className="flex items-start justify-between relative z-10">
+        <div>
+          <p className="text-white/40 text-xs font-medium uppercase tracking-wider mb-1">{title}</p>
+          <h3 className="text-2xl font-bold">{company?.currency} {amount.toLocaleString()}</h3>
+        </div>
+        <div className={cn("p-3 rounded-2xl", color.replace('bg-', 'bg-').replace('text-', 'text-').concat('/10'))}>
+          <Icon className={cn("w-6 h-6", color.replace('bg-', 'text-'))} />
+        </div>
+      </div>
+      <div className="mt-4 flex items-center gap-1.5 text-xs">
+         {trend > 0 ? (
+           <span className="text-green-400 flex items-center gap-0.5"><ArrowUpRight className="w-3 h-3" /> +12%</span>
+         ) : (
+           <span className="text-red-400 flex items-center gap-0.5"><ArrowDownRight className="w-3 h-3" /> -5%</span>
+         )}
+         <span className="text-white/20">from last month</span>
+      </div>
+    </div>
+  );
+
+  if (loading) return null;
+
+  const COLORS = ['#3b82f6', '#8b5cf6', '#ec4899', '#f97316', '#10b981', '#6366f1'];
+
+  return (
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Financial Overview</h1>
+          <p className="text-white/40 mt-1">Here's how your business is performing this month.</p>
+        </div>
+        <div className="bg-[#1c1c1e] px-4 py-2 rounded-2xl border border-white/5 text-sm font-medium">
+          {format(new Date(), 'MMMM yyyy')}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          title="Today's Income" 
+          amount={stats.todayIncome} 
+          icon={TrendingUp} 
+          trend={1} 
+          color="bg-green-500 text-green-500" 
+        />
+        <StatCard 
+          title="Today's Expenses" 
+          amount={stats.todayExpense} 
+          icon={TrendingDown} 
+          trend={-1} 
+          color="bg-red-500 text-red-500" 
+        />
+        <StatCard 
+          title="Monthly Profit" 
+          amount={stats.netProfit} 
+          icon={Wallet} 
+          trend={1} 
+          color="bg-blue-500 text-blue-500" 
+        />
+        <StatCard 
+          title="Total Cashflow" 
+          amount={stats.monthIncome + stats.monthExpense} 
+          icon={PieChartIcon} 
+          trend={1} 
+          color="bg-purple-500 text-purple-500" 
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Trend Chart */}
+        <div className="lg:col-span-2 bg-[#1c1c1e] p-8 rounded-[2.5rem] border border-white/5 shadow-2xl">
+          <div className="flex items-center justify-between mb-8">
+             <h3 className="font-bold text-lg">Income vs Expense</h3>
+             <div className="flex gap-4 text-xs font-medium">
+               <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Income</div>
+               <div className="flex items-center gap-2"><div className="w-2.5 h-2.5 rounded-full bg-white/10" /> Expense</div>
+             </div>
+          </div>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#ffffff05" />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#ffffff30', fontSize: 12 }}
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#ffffff30', fontSize: 12 }}
+                />
+                <Tooltip 
+                  cursor={{ fill: '#ffffff05' }}
+                  contentStyle={{ backgroundColor: '#1c1c1e', border: '1px solid #ffffff10', borderRadius: '16px' }}
+                />
+                <Bar dataKey="income" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={24} />
+                <Bar dataKey="expense" fill="#ffffff10" radius={[6, 6, 0, 0]} barSize={24} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Categories Pie */}
+        <div className="bg-[#1c1c1e] p-8 rounded-[2.5rem] border border-white/5 shadow-2xl flex flex-col">
+          <h3 className="font-bold text-lg mb-8">Expenses by Category</h3>
+          <div className="flex-1 h-[250px] min-h-[250px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={8}
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#1c1c1e', border: '1px solid #ffffff10', borderRadius: '16px' }}
+                  />
+                </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="space-y-3 mt-4">
+            {categoryData.slice(0, 4).map((cat, i) => (
+              <div key={cat.name} className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                  <span className="text-white/60">{cat.name}</span>
+                </div>
+                <span className="font-bold">{company?.currency} {cat.value.toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
