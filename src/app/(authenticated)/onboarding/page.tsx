@@ -75,9 +75,9 @@ export default function OnboardingPage() {
 
       // 4. Redirect to Chat
       router.push('/chat');
-    } catch (err) {
-      console.error(err);
-      alert('Something went wrong. Please try again.');
+    } catch (err: any) {
+      console.error('Onboarding Error:', err);
+      alert(`Something went wrong: ${err.message || 'Unknown error'}. Please check the console for details.`);
     } finally {
       setLoading(false);
     }
