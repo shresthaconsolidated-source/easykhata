@@ -1,20 +1,15 @@
 -- ========================================================================================
 -- easyKhata Master Consolidated Database Setup
 -- Run this script in the Supabase SQL Editor to initialize the complete database schema.
+-- This script is completely safe to run multiple times (it uses IF NOT EXISTS).
 -- ========================================================================================
 
--- 1. DROP EXISTING SCHEMA (Optional: Uncomment to reset database completely)
--- DROP SCHEMA public CASCADE;
--- CREATE SCHEMA public;
--- GRANT ALL ON SCHEMA public TO postgres;
--- GRANT ALL ON SCHEMA public TO public;
-
 -- ========================================================================================
--- 2. TABLES CREATION
+-- 1. TABLES CREATION
 -- ========================================================================================
 
 -- Create a table for companies
-CREATE TABLE public.companies (
+CREATE TABLE IF NOT EXISTS public.companies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   address TEXT,
@@ -25,7 +20,7 @@ CREATE TABLE public.companies (
 );
 
 -- Create a table for user profiles (linked to auth.users)
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT NOT NULL,
   full_name TEXT,
@@ -34,7 +29,7 @@ CREATE TABLE public.profiles (
 );
 
 -- Create a table for company memberships
-CREATE TABLE public.company_members (
+CREATE TABLE IF NOT EXISTS public.company_members (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
   user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -44,7 +39,7 @@ CREATE TABLE public.company_members (
 );
 
 -- Create a table for clients
-CREATE TABLE public.clients (
+CREATE TABLE IF NOT EXISTS public.clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -56,7 +51,7 @@ CREATE TABLE public.clients (
 );
 
 -- Create a table for categories
-CREATE TABLE public.categories (
+CREATE TABLE IF NOT EXISTS public.categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
@@ -66,7 +61,7 @@ CREATE TABLE public.categories (
 );
 
 -- Create a table for transactions
-CREATE TABLE public.transactions (
+CREATE TABLE IF NOT EXISTS public.transactions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
   user_id UUID REFERENCES public.profiles(id),
@@ -81,7 +76,7 @@ CREATE TABLE public.transactions (
 );
 
 -- Create a table for invoices
-CREATE TABLE public.invoices (
+CREATE TABLE IF NOT EXISTS public.invoices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
   client_id UUID REFERENCES public.clients(id) ON DELETE SET NULL,
@@ -100,7 +95,7 @@ CREATE TABLE public.invoices (
 );
 
 -- Create a table for invoice items
-CREATE TABLE public.invoice_items (
+CREATE TABLE IF NOT EXISTS public.invoice_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   invoice_id UUID REFERENCES public.invoices(id) ON DELETE CASCADE,
   description TEXT NOT NULL,
@@ -110,7 +105,7 @@ CREATE TABLE public.invoice_items (
 );
 
 -- Create a table for invitations
-CREATE TABLE public.invitations (
+CREATE TABLE IF NOT EXISTS public.invitations (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE,
     email TEXT NOT NULL,
@@ -119,6 +114,17 @@ CREATE TABLE public.invitations (
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
+
+-- ========================================================================================
+-- 2. DATA MIGRATIONS / FIXES
+-- ========================================================================================
+
+-- Ensure any existing company creators are upgraded to 'owner' role. 
+-- Older accounts created before roles existed defaulted to 'member', which blocks invitations.
+UPDATE public.company_members cm
+SET role = 'owner'
+FROM public.companies c
+WHERE cm.company_id = c.id AND c.created_by = cm.user_id;
 
 -- ========================================================================================
 -- 3. ROW LEVEL SECURITY (RLS) Configuration
@@ -147,31 +153,42 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Companies: Members can manage (view/delete), creator can view, and authenticated can create
+DROP POLICY IF EXISTS "Members can view company" ON public.companies;
 CREATE POLICY "Members can view company" ON public.companies FOR SELECT USING (
     is_member_of(id) OR created_by = auth.uid()
 );
+DROP POLICY IF EXISTS "Members can update company" ON public.companies;
 CREATE POLICY "Members can update company" ON public.companies FOR UPDATE USING (is_member_of(id));
+
+DROP POLICY IF EXISTS "Members can delete company" ON public.companies;
 CREATE POLICY "Members can delete company" ON public.companies FOR DELETE USING (is_member_of(id));
+
+DROP POLICY IF EXISTS "Authenticated users can create companies" ON public.companies;
 CREATE POLICY "Authenticated users can create companies" ON public.companies
     FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Transactions: Members can CRUD
+DROP POLICY IF EXISTS "Members can manage transactions" ON public.transactions;
 CREATE POLICY "Members can manage transactions" ON public.transactions
     FOR ALL USING (is_member_of(company_id));
 
 -- Categories: Members can CRUD
+DROP POLICY IF EXISTS "Members can manage categories" ON public.categories;
 CREATE POLICY "Members can manage categories" ON public.categories
     FOR ALL USING (is_member_of(company_id));
 
 -- Clients: Members can CRUD
+DROP POLICY IF EXISTS "Members can manage clients" ON public.clients;
 CREATE POLICY "Members can manage clients" ON public.clients
     FOR ALL USING (is_member_of(company_id));
 
 -- Invoices: Members can CRUD
+DROP POLICY IF EXISTS "Members can manage invoices" ON public.invoices;
 CREATE POLICY "Members can manage invoices" ON public.invoices
     FOR ALL USING (is_member_of(company_id));
 
 -- Invoice Items: Members can CRUD (via Invoice member check)
+DROP POLICY IF EXISTS "Members can manage invoice items" ON public.invoice_items;
 CREATE POLICY "Members can manage invoice items" ON public.invoice_items
     FOR ALL USING (
         EXISTS (
@@ -181,27 +198,38 @@ CREATE POLICY "Members can manage invoice items" ON public.invoice_items
     );
 
 -- Company Members: View own membership or if member of company
+DROP POLICY IF EXISTS "Members can view company membership" ON public.company_members;
 CREATE POLICY "Members can view company membership" ON public.company_members
     FOR SELECT USING (is_member_of(company_id) OR auth.uid() = user_id);
+
 -- Allow authenticated users to join a company (via invite or onboarding)
+DROP POLICY IF EXISTS "Authenticated users can join company" ON public.company_members;
 CREATE POLICY "Authenticated users can join company" ON public.company_members
     FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Profiles: Users can see and update their own profile
+DROP POLICY IF EXISTS "Users can see their own profile" ON public.profiles;
 CREATE POLICY "Users can see their own profile" ON public.profiles
     FOR SELECT USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile" ON public.profiles
     FOR UPDATE USING (auth.uid() = id);
 
 -- Invitations: Allow anyone with a valid token to view, but only owners to create
+DROP POLICY IF EXISTS "Users can create invitations for their company" ON public.invitations;
 CREATE POLICY "Users can create invitations for their company" ON public.invitations
     FOR INSERT WITH CHECK (
         company_id IN (SELECT company_id FROM public.company_members WHERE user_id = auth.uid() AND role = 'owner')
     );
+
+DROP POLICY IF EXISTS "Users can view invitations for their company" ON public.invitations;
 CREATE POLICY "Users can view invitations for their company" ON public.invitations
     FOR SELECT USING (
         company_id IN (SELECT company_id FROM public.company_members WHERE user_id = auth.uid()) OR true
     );
+
+DROP POLICY IF EXISTS "Users can update invitations they are accepting" ON public.invitations;
 CREATE POLICY "Users can update invitations they are accepting" ON public.invitations
     FOR UPDATE USING (true) WITH CHECK (status = 'accepted');
 
