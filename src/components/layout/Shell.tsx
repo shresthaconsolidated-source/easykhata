@@ -13,7 +13,8 @@ import {
   Menu, 
   X,
   Plus,
-  LogOut
+  LogOut,
+  Shield
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -135,6 +136,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </div>
               Insights
             </Link>
+
+            {user?.email === 'shresthaconsolidated@gmail.com' && (
+              <Link
+                href="/admin"
+                onClick={() => setSidebarOpen(false)}
+                className={cn(
+                  "group flex items-center gap-3 px-4 py-3 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-300",
+                  pathname === '/admin'
+                    ? "bg-red-500/10 text-red-400 border border-red-500/20 shadow-lg"
+                    : "text-white/20 hover:text-red-400 hover:bg-red-500/5 border border-transparent"
+                )}
+              >
+                <Shield className={cn(
+                  "w-4 h-4 transition-colors duration-300",
+                  pathname === '/admin' ? "text-red-400" : "text-white/20 group-hover:text-red-400/60"
+                )} />
+                Admin
+              </Link>
+            )}
           </nav>
 
           {/* Bottom Actions */}
@@ -204,6 +224,19 @@ export function Shell({ children }: { children: React.ReactNode }) {
                </Link>
              );
            })}
+
+           {user?.email === 'shresthaconsolidated@gmail.com' && (
+             <Link 
+               href="/admin"
+               className={cn(
+                 "flex flex-col items-center gap-1 p-3 rounded-2xl transition-all duration-300 relative",
+                 pathname === '/admin' ? "text-red-500 scale-110" : "text-white/30 hover:text-white/60"
+               )}
+             >
+               <Shield className={cn("w-5 h-5", pathname === '/admin' && "drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]")} />
+               <span className="text-[8px] font-black uppercase tracking-widest">Admin</span>
+             </Link>
+           )}
            
            {/* Add Transaction Button - Center Focus */}
            <button 
