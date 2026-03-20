@@ -58,11 +58,16 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Companies: Members can manage (view/delete)
+-- Companies: Members can manage (view/delete), and authenticated can create
 DROP POLICY IF EXISTS "Members can view company details" ON companies;
 DROP POLICY IF EXISTS "Members can manage company" ON companies;
+DROP POLICY IF EXISTS "Authenticated users can create companies" ON companies;
+
 CREATE POLICY "Members can manage company" ON companies
     FOR ALL USING (is_member_of(id));
+
+CREATE POLICY "Authenticated users can create companies" ON companies
+    FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
 
 -- Transactions: Members can CRUD
 DROP POLICY IF EXISTS "Members can manage transactions" ON transactions;
