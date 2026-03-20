@@ -105,33 +105,35 @@ export default function ChatPage() {
        foundQuantity = Math.min(...numbers);
     }
 
-    // 3. Type Detection
+    // 3. Type Detection — English + Nepali Romanized
     let type: 'income' | 'expense' = 'expense';
     if (
-      lowerText.includes('received') || 
-      lowerText.includes('income') || 
-      lowerText.includes('sold') || 
-      lowerText.includes('sale') || 
-      lowerText.includes('profit') ||
-      lowerText.includes('earned') ||
-      lowerText.includes('plus') ||
-      lowerText.includes('salary') ||
-      lowerText.includes('sales')
+      // English income words
+      lowerText.includes('received') || lowerText.includes('income') ||
+      lowerText.includes('sold') || lowerText.includes('sale') ||
+      lowerText.includes('profit') || lowerText.includes('earned') ||
+      lowerText.includes('plus') || lowerText.includes('salary') ||
+      lowerText.includes('sales') ||
+      // Nepali Romanized income words
+      lowerText.includes('bechyo') || lowerText.includes('bechi') ||  // sold
+      lowerText.includes('paisa aayo') || lowerText.includes('aayo') ||  // money came
+      lowerText.includes('milyo') || lowerText.includes('miliyo') ||  // received
+      lowerText.includes('tiryo') || lowerText.includes('payment aayo')    // received payment
     ) {
       type = 'income';
     }
 
-    // 4. Smart Date Detection
+    // 4. Smart Date Detection — English + Nepali
     let date = format(new Date(), 'yyyy-MM-dd');
     const now = new Date();
     
-    if (lowerText.includes('yesterday')) {
+    if (lowerText.includes('yesterday') || lowerText.includes('hijo')) {
       date = format(subDays(now, 1), 'yyyy-MM-dd');
-    } else if (lowerText.includes('day before yesterday')) {
+    } else if (lowerText.includes('day before yesterday') || lowerText.includes('asti')) {
       date = format(subDays(now, 2), 'yyyy-MM-dd');
-    } else if (lowerText.includes('last month')) {
+    } else if (lowerText.includes('last month') || lowerText.includes('asina mahina')) {
       date = format(subDays(now, 30), 'yyyy-MM-dd');
-    } else if (lowerText.includes('last week')) {
+    } else if (lowerText.includes('last week') || lowerText.includes('asina hafta')) {
       date = format(subDays(now, 7), 'yyyy-MM-dd');
     }
 
@@ -143,10 +145,37 @@ export default function ChatPage() {
     let matchedKeywordCategory: string | null = null;
     if (!category) {
       const keywordMap: Record<string, string> = {
-        'taxi': 'Travel', 'bus': 'Travel', 'fuel': 'Travel', 'petrol': 'Travel', 'ride': 'Travel', 'uber': 'Travel', 'pathao': 'Travel',
-        'food': 'Meals', 'dinner': 'Meals', 'lunch': 'Meals', 'breakfast': 'Meals', 'khaja': 'Meals', 'restaurant': 'Meals', 'momo': 'Meals', 'burger': 'Meals', 'chicken': 'Meals', 'candle': 'Supplies',
-        'rent': 'Housing', 'electricity': 'Utilities', 'water': 'Utilities', 'internet': 'Utilities', 'wifi': 'Utilities',
-        'salary': 'Salary', 'sold': 'Sales', 'sale': 'Sales', 'sales': 'Sales', 'bonus': 'Bonus', 'inventory': 'Supplies', 'stock': 'Supplies'
+        // --- English ---
+        'taxi': 'Travel', 'bus': 'Travel', 'fuel': 'Travel', 'petrol': 'Travel',
+        'ride': 'Travel', 'uber': 'Travel', 'pathao': 'Travel',
+        'food': 'Meals', 'dinner': 'Meals', 'lunch': 'Meals', 'breakfast': 'Meals',
+        'restaurant': 'Meals', 'momo': 'Meals', 'burger': 'Meals', 'chicken': 'Meals',
+        'rent': 'Housing', 'electricity': 'Utilities', 'water': 'Utilities',
+        'internet': 'Utilities', 'wifi': 'Utilities',
+        'salary': 'Salary', 'sold': 'Sales', 'sale': 'Sales', 'sales': 'Sales',
+        'bonus': 'Bonus', 'inventory': 'Supplies', 'stock': 'Supplies',
+        'candle': 'Supplies', 'khaja': 'Meals',
+        // --- Nepali Romanized ---
+        // Travel
+        'gadi': 'Travel', 'sawa': 'Travel', 'tempo': 'Travel', 'auto': 'Travel',
+        'microbus': 'Travel', 'sajha': 'Travel', 'yatayat': 'Travel',
+        // Food / Meals
+        'khana': 'Meals', 'bhojan': 'Meals', 'nasto': 'Meals', 'tarkari': 'Meals',
+        'sabji': 'Meals', 'daal': 'Meals', 'bhat': 'Meals', 'roti': 'Meals',
+        'piro': 'Meals', 'mithai': 'Meals', 'chiya': 'Meals',  // tea
+        // Groceries / Supplies
+        'alu': 'Supplies', 'pyaj': 'Supplies', 'chini': 'Supplies',
+        'tel': 'Supplies', 'maida': 'Supplies', 'chamal': 'Supplies',
+        'sabun': 'Supplies', 'saman': 'Supplies',  // goods/items
+        // Sales / Income
+        'bechyo': 'Sales', 'bechi': 'Sales', 'bechna': 'Sales',
+        'bikri': 'Sales',  // sale
+        // Housing
+        'bhada': 'Housing', 'kotha': 'Housing',  // rent, room
+        // Utilities
+        'bijuli': 'Utilities', 'paani': 'Utilities',
+        // Salary
+        'tankha': 'Salary', 'mahina': 'Salary',
       };
 
       for (const [kw, catName] of Object.entries(keywordMap)) {
@@ -158,8 +187,9 @@ export default function ChatPage() {
       }
     }
 
-    // 6. Unit Price Logic
-    if (lowerText.includes('each') || lowerText.includes('/')) {
+    // 6. Unit Price Logic — English + Nepali units
+    const perUnitWords = ['each', '/', 'per', 'ko', 'ma', 'ek'];
+    if (perUnitWords.some(w => lowerText.includes(w)) && foundQuantity > 1) {
        foundAmount = foundAmount * foundQuantity;
     }
 
@@ -177,7 +207,7 @@ export default function ChatPage() {
       categoryId: category?.id || null,
       categoryName: category?.name || 'Other',
       potentialCategoryName: potentialCategoryName,
-      note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today|day before|at|for|last|month|week|each/gi, '').trim()
+      note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today|day before|at|for|last|month|week|each|bechyo|bechi|garyo|kinyo|aayo|hijo|asti/gi, '').trim()
     };
   };
 

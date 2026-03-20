@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Printer, Download } from 'lucide-react';
+import { ArrowLeft, Printer, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency, cn } from '@/lib/utils';
 
@@ -116,7 +116,28 @@ export default function InvoiceDetailPage() {
         >
           <ArrowLeft className="w-5 h-5" /> Back to Invoices
         </button>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
+          <button 
+            onClick={() => {
+              const lines = items.map((item: any) => `  • ${item.description}: ${item.quantity} x ${Number(item.rate).toLocaleString()} = ${company?.currency || 'NPR'} ${Number(item.amount).toLocaleString()}`);
+              const message = [
+                `*Invoice from ${company?.name}*`,
+                `Invoice No: ${invoice.invoice_number}`,
+                `Client: ${invoice.client_name}`,
+                ``,
+                ...lines,
+                ``,
+                `*Total: ${company?.currency || 'NPR'} ${Number(invoice.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}*`,
+                `Due: ${format(new Date(invoice.due_date), 'MMM dd, yyyy')}`,
+                ``,
+                `Powered by easyKhata`
+              ].join('\n');
+              window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+            }}
+            className="bg-[#25D366] hover:bg-[#20b859] text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 font-bold transition-all shadow-lg active:scale-95"
+          >
+            <MessageSquare className="w-4 h-4" /> WhatsApp
+          </button>
           <button 
             onClick={() => window.print()}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-2xl flex items-center gap-2 font-bold transition-all shadow-lg shadow-blue-500/20 active:scale-95"
