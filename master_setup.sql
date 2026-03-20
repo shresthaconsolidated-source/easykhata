@@ -63,8 +63,9 @@ DROP POLICY IF EXISTS "Members can view company details" ON companies;
 DROP POLICY IF EXISTS "Members can manage company" ON companies;
 DROP POLICY IF EXISTS "Authenticated users can create companies" ON companies;
 
-CREATE POLICY "Members can manage company" ON companies
-    FOR SELECT, UPDATE, DELETE USING (is_member_of(id));
+CREATE POLICY "Members can view company" ON companies FOR SELECT USING (is_member_of(id));
+CREATE POLICY "Members can update company" ON companies FOR UPDATE USING (is_member_of(id));
+CREATE POLICY "Members can delete company" ON companies FOR DELETE USING (is_member_of(id));
 
 CREATE POLICY "Authenticated users can create companies" ON companies
     FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
