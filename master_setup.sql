@@ -47,6 +47,7 @@ ALTER TABLE public.invoice_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invitations ENABLE ROW LEVEL SECURITY;
 
 -- Global helper function (Ensure it exists)
+DROP FUNCTION IF EXISTS public.is_member_of(UUID);
 CREATE OR REPLACE FUNCTION public.is_member_of(comp_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
