@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 // This route is called by Vercel Cron every Friday at 8:00 AM Nepal time (2:15 AM UTC)
 // Schedule: "15 2 * * 5" in vercel.json
 

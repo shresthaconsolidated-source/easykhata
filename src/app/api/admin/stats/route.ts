@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+
 const ADMIN_EMAIL = 'shresthaconsolidated@gmail.com';
 
 const supabaseAdmin = createClient(
