@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { 
   Building2, 
@@ -30,8 +31,8 @@ import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth();
+  const { company, refreshCompany } = useCompany();
   const router = useRouter();
-  const [company, setCompany] = useState<any>(null);
   const [members, setMembers] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -49,25 +50,13 @@ export default function SettingsPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && company) {
       fetchSettings();
     }
-  }, [user]);
+  }, [user, company]);
 
   const fetchSettings = async () => {
-    const { data: membership } = await supabase
-      .from('company_members')
-      .select('company_id, role, companies(*)')
-      .eq('user_id', user?.id)
-      .maybeSingle();
-
-    if (!membership) {
-      router.push('/onboarding');
-      return;
-    }
-    setCompany({ ...membership.companies, user_role: membership.role });
-
-    const companyId = membership.company_id;
+    const companyId = company.id;
 
     // Fetch members
     const { data: membersData } = await supabase
@@ -102,7 +91,10 @@ export default function SettingsPage() {
   const deleteCategory = async (id: string) => {
     if (!confirm('Are you sure you want to delete this category?')) return;
     const { error } = await supabase.from('categories').delete().eq('id', id);
-    if (!error) fetchSettings();
+    if (!error) {
+      fetchSettings();
+      refreshCompany();
+    }
   };
 
   const handleResetData = async () => {

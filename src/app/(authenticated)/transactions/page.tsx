@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
 import { 
@@ -20,55 +21,38 @@ import { format } from 'date-fns';
 
 export default function TransactionsPage() {
   const { user } = useAuth();
+  const { company } = useCompany();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
-  const [company, setCompany] = useState<any>(null);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [showEditModal, setShowEditModal] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && company) {
       fetchTransactions();
       fetchCategories();
     }
-  }, [user]);
+  }, [user, company]);
 
   const fetchCategories = async () => {
-    const { data: membership } = await supabase
-      .from('company_members')
-      .select('company_id')
-      .eq('user_id', user?.id)
-      .single();
-
-    if (!membership) return;
-
     const { data } = await supabase
       .from('categories')
       .select('*')
-      .eq('company_id', membership.company_id)
+      .eq('company_id', company.id)
       .order('name');
 
     if (data) setCategories(data);
   };
 
   const fetchTransactions = async () => {
-    const { data: membership } = await supabase
-      .from('company_members')
-      .select('company_id, companies(*)')
-      .eq('user_id', user?.id)
-      .single();
-
-    if (!membership) return;
-    setCompany(membership.companies);
-
     const { data, error } = await supabase
       .from('transactions')
       .select('*, categories(name)')
-      .eq('company_id', membership.company_id)
+      .eq('company_id', company.id)
       .order('date', { ascending: false })
       .order('created_at', { ascending: false });
 

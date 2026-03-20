@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
 import { 
@@ -33,6 +34,7 @@ import { startOfMonth, endOfMonth, format, subMonths } from 'date-fns';
 
 export default function DashboardPage() {
   const { user } = useAuth();
+  const { company } = useCompany();
   const router = useRouter();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [stats, setStats] = useState({
@@ -49,26 +51,16 @@ export default function DashboardPage() {
   const [chartData, setChartData] = useState<any[]>([]);
   const [categoryData, setCategoryData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [company, setCompany] = useState<any>(null);
 
   useEffect(() => {
-    if (user) {
+    if (user && company) {
       fetchDashboardData();
     }
-  }, [user, selectedDate]);
+  }, [user, company, selectedDate]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
-    const { data: membership } = await supabase
-      .from('company_members')
-      .select('company_id, companies(*)')
-      .eq('user_id', user?.id)
-      .single();
-
-    if (!membership) return;
-    setCompany(membership.companies);
-
-    const companyId = membership.company_id;
+    const companyId = company.id;
     const today = format(new Date(), 'yyyy-MM-dd');
     const monthStart = format(startOfMonth(selectedDate), 'yyyy-MM-dd');
     const monthEnd = format(endOfMonth(selectedDate), 'yyyy-MM-dd');

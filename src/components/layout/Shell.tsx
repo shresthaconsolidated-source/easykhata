@@ -18,6 +18,7 @@ import {
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 
 function cn(...inputs: ClassValue[]) {
@@ -35,26 +36,10 @@ const navItems = [
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const { user, signOut } = useAuth();
+  const { company } = useCompany();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [company, setCompany] = useState<any>(null);
   const pathname = usePathname();
-
-  useEffect(() => {
-    if (user) {
-      fetchCompany();
-    }
-  }, [user]);
-
-  const fetchCompany = async () => {
-    const { data } = await supabase
-      .from('company_members')
-      .select('companies(*)')
-      .eq('user_id', user?.id)
-      .single();
-    
-    if (data) setCompany(data.companies);
-  };
 
   return (
     <div className="flex h-screen bg-black text-white overflow-hidden font-sans">

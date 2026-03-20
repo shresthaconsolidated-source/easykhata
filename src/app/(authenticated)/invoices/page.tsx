@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { cn, formatCurrency } from '@/lib/utils';
 import { 
@@ -20,30 +21,21 @@ import Link from 'next/link';
 
 export default function InvoicesPage() {
   const { user } = useAuth();
+  const { company } = useCompany();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [company, setCompany] = useState<any>(null);
 
   useEffect(() => {
-    if (user) {
+    if (user && company) {
       fetchInvoices();
     }
-  }, [user]);
+  }, [user, company]);
 
   const fetchInvoices = async () => {
-    const { data: membership } = await supabase
-      .from('company_members')
-      .select('company_id, companies(*)')
-      .eq('user_id', user?.id)
-      .single();
-
-    if (!membership) return;
-    setCompany(membership.companies);
-
     const { data } = await supabase
       .from('invoices')
       .select('*')
-      .eq('company_id', membership.company_id)
+      .eq('company_id', company.id)
       .order('date', { ascending: false });
 
     if (data) setInvoices(data);

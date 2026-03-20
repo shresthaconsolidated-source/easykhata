@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency, cn } from '@/lib/utils';
 import { 
@@ -17,36 +18,29 @@ import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
 export default function PLPage() {
   const { user } = useAuth();
+  const { company } = useCompany();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [compareDate, setCompareDate] = useState(subMonths(new Date(), 1));
   const [isComparing, setIsComparing] = useState(false);
   const [data, setData] = useState<any>(null);
   const [compareData, setCompareData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [company, setCompany] = useState<any>(null);
 
   useEffect(() => {
-    if (user) {
+    if (user && company) {
       fetchAllData();
     }
-  }, [user, selectedDate, compareDate, isComparing]);
+  }, [user, company, selectedDate, compareDate, isComparing]);
 
   const fetchAllData = async () => {
     setLoading(true);
-    const { data: membership } = await supabase
-      .from('company_members')
-      .select('company_id, companies(*)')
-      .eq('user_id', user?.id)
-      .single();
+    const companyId = company.id;
 
-    if (!membership) return;
-    setCompany(membership.companies);
-
-    const d1 = await fetchPeriodData(membership.company_id, selectedDate);
+    const d1 = await fetchPeriodData(companyId, selectedDate);
     setData(d1);
 
     if (isComparing) {
-      const d2 = await fetchPeriodData(membership.company_id, compareDate);
+      const d2 = await fetchPeriodData(companyId, compareDate);
       setCompareData(d2);
     }
 

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { 
   TrendingUp, 
@@ -31,8 +32,8 @@ interface Insight {
 
 export default function InsightsPage() {
   const { user } = useAuth();
+  const { company } = useCompany();
   const [loading, setLoading] = useState(true);
-  const [company, setCompany] = useState<any>(null);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [stats, setStats] = useState({
     currentBalance: 0,
@@ -45,24 +46,16 @@ export default function InsightsPage() {
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && company) {
       fetchData();
     }
-  }, [user]);
+  }, [user, company]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch Company
-      const { data: membership } = await supabase
-        .from('company_members')
-        .select('company_id, companies(*)')
-        .eq('user_id', user?.id)
-        .single();
-      
-      if (!membership) return;
-      setCompany(membership.companies);
-      const companyId = membership.company_id;
+      // 1. Get Company ID from Context
+      const companyId = company.id;
 
       // 2. Fetch Transactions (Current & Last Month)
       const now = new Date();
@@ -147,7 +140,7 @@ export default function InsightsPage() {
 
       // Profit Insight
       const profit = incomeThis - expenseThis;
-      const currency = (membership.companies as any).currency || 'NPR';
+      const currency = company.currency || 'NPR';
       if (profit > 0) {
         newInsights.push({
           id: '3',

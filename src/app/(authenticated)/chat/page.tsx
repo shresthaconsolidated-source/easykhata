@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { format, subDays } from 'date-fns';
 import { 
@@ -28,26 +29,21 @@ interface Message {
 
 export default function ChatPage() {
   const { user } = useAuth();
+  const { company } = useCompany();
   const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      role: 'bot',
-      content: 'Hello! I am your easyKhata assistant. Tell me about your income or expenses, and I will track them for you. \n\nExample: "spent 500 on dinner yesterday"',
-      timestamp: new Date()
-    }
+    // ...
   ]);
   const [input, setInput] = useState('');
-  const [company, setCompany] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
   const [pendingTransaction, setPendingTransaction] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (user) {
-      fetchCompany();
+    if (user && company) {
+      fetchCategories(company.id);
     }
-  }, [user]);
+  }, [user, company]);
 
   useEffect(() => {
     scrollToBottom();
@@ -57,18 +53,7 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const fetchCompany = async () => {
-    const { data: membership } = await supabase
-      .from('company_members')
-      .select('company_id, companies(*)')
-      .eq('user_id', user?.id)
-      .single();
-    
-    if (membership) {
-      setCompany(membership.companies);
-      fetchCategories(membership.company_id);
-    }
-  };
+
 
   const fetchCategories = async (companyId: string) => {
     const { data } = await supabase

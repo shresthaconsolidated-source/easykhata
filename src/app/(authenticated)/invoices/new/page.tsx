@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { 
@@ -19,9 +20,9 @@ import { format } from 'date-fns';
 
 export default function NewInvoicePage() {
   const { user } = useAuth();
+  const { company } = useCompany();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [company, setCompany] = useState<any>(null);
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   const [saveClient, setSaveClient] = useState(false);
@@ -40,30 +41,22 @@ export default function NewInvoicePage() {
   ]);
 
   useEffect(() => {
-    if (user) {
-      fetchCompany();
+    if (user && company) {
+      initPage();
     }
-  }, [user]);
+  }, [user, company]);
 
-  const fetchCompany = async () => {
-    const { data } = await supabase
-      .from('company_members')
-      .select('company_id, companies(*)')
-      .eq('user_id', user?.id)
-      .single();
+  const initPage = async () => {
+    const companyId = company.id;
+    fetchClients(companyId);
     
-    if (data) {
-      setCompany(data.companies);
-      fetchClients(data.company_id);
-      
-      // Sequential Invoice Numbering - Requested by User
-      const { count } = await supabase
-        .from('invoices')
-        .select('*', { count: 'exact', head: true })
-        .eq('company_id', data.company_id);
-      
-      setInvoice(prev => ({ ...prev, invoice_number: `INV-${(count || 0) + 1}` }));
-    }
+    // Sequential Invoice Numbering
+    const { count } = await supabase
+      .from('invoices')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', companyId);
+    
+    setInvoice(prev => ({ ...prev, invoice_number: `INV-${(count || 0) + 1}` }));
   };
 
   const fetchClients = async (companyId: string) => {

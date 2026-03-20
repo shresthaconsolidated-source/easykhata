@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { useParams, useRouter } from 'next/navigation';
 import { 
@@ -20,10 +21,10 @@ import { format } from 'date-fns';
 export default function EditInvoicePage() {
   const { id } = useParams();
   const { user } = useAuth();
+  const { company } = useCompany();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [company, setCompany] = useState<any>(null);
   const [clients, setClients] = useState<any[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>('');
   
@@ -41,21 +42,13 @@ export default function EditInvoicePage() {
   const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
-    if (user && id) {
+    if (user && company && id) {
       fetchData();
     }
-  }, [user, id]);
+  }, [user, company, id]);
 
   const fetchData = async () => {
-    // 1. Fetch Company
-    const { data: membership } = await supabase
-      .from('company_members')
-      .select('company_id, companies(*)')
-      .eq('user_id', user?.id)
-      .single();
-    
-    if (!membership) return;
-    setCompany(membership.companies);
+    const companyId = company.id;
 
     // 2. Fetch Invoice
     const { data: invData, error: invError } = await supabase
@@ -101,7 +94,7 @@ export default function EditInvoicePage() {
     const { data: clientData } = await supabase
       .from('clients')
       .select('*')
-      .eq('company_id', membership.company_id)
+      .eq('company_id', companyId)
       .order('name');
     if (clientData) setClients(clientData);
 
