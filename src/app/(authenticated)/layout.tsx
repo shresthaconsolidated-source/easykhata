@@ -30,10 +30,9 @@ export default function AuthenticatedLayout({
     const { data, error } = await supabase
       .from('company_members')
       .select('company_id')
-      .eq('user_id', user?.id)
-      .maybeSingle();
+      .eq('user_id', user?.id);
 
-    if (error || !data) {
+    if (error || !data || data.length === 0) {
       setHasCompany(false);
       if (pathname !== '/onboarding') {
         router.push('/onboarding');

@@ -40,10 +40,9 @@ export default function OnboardingPage() {
     const { data } = await supabase
       .from('company_members')
       .select('company_id')
-      .eq('user_id', user?.id)
-      .maybeSingle();
+      .eq('user_id', user?.id);
     
-    if (data) {
+    if (data && data.length > 0) {
       router.push('/chat');
     }
   };

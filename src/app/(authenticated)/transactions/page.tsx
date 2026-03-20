@@ -11,6 +11,8 @@ import {
   TrendingDown, 
   MoreVertical, 
   Trash2, 
+  Pencil,
+  X,
   Calendar as CalendarIcon,
   Tag
 } from 'lucide-react';
@@ -23,12 +25,35 @@ export default function TransactionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [company, setCompany] = useState<any>(null);
+  const [editingTransaction, setEditingTransaction] = useState<any>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchTransactions();
+      fetchCategories();
     }
   }, [user]);
+
+  const fetchCategories = async () => {
+    const { data: membership } = await supabase
+      .from('company_members')
+      .select('company_id')
+      .eq('user_id', user?.id)
+      .single();
+
+    if (!membership) return;
+
+    const { data } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('company_id', membership.company_id)
+      .order('name');
+
+    if (data) setCategories(data);
+  };
 
   const fetchTransactions = async () => {
     const { data: membership } = await supabase
@@ -62,6 +87,37 @@ export default function TransactionsPage() {
     if (!error) {
       setTransactions(transactions.filter(t => t.id !== id));
     }
+  };
+
+  const startEditing = (transaction: any) => {
+    setEditingTransaction({
+      ...transaction,
+      date: format(new Date(transaction.date), 'yyyy-MM-dd')
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    
+    const { error } = await supabase
+      .from('transactions')
+      .update({
+        date: editingTransaction.date,
+        amount: Number(editingTransaction.amount),
+        category_id: editingTransaction.category_id,
+        note: editingTransaction.note,
+        type: editingTransaction.type
+      })
+      .eq('id', editingTransaction.id);
+
+    if (!error) {
+      await fetchTransactions();
+      setShowEditModal(false);
+      setEditingTransaction(null);
+    }
+    setSaving(false);
   };
 
   const filteredTransactions = transactions.filter(t => {
@@ -156,12 +212,20 @@ export default function TransactionsPage() {
                     </div>
                   </td>
                   <td className="px-6 py-5 text-right">
-                    <button 
-                      onClick={() => deleteTransaction(t.id)}
-                      className="p-2 text-white/20 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => startEditing(t)}
+                        className="p-2 text-white/20 hover:text-blue-400 hover:bg-blue-400/10 rounded-xl transition-all"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => deleteTransaction(t.id)}
+                        className="p-2 text-white/20 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -184,6 +248,114 @@ export default function TransactionsPage() {
           </table>
         </div>
       </div>
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-[#1c1c1e] border border-white/10 rounded-[2rem] w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+              <h2 className="text-xl font-bold text-white">Edit Transaction</h2>
+              <button 
+                onClick={() => setShowEditModal(false)}
+                className="p-2 text-white/40 hover:text-white rounded-xl hover:bg-white/5 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdate} className="p-8 space-y-5">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-white/40 uppercase tracking-widest ml-1">Type</label>
+                <div className="flex bg-black p-1 rounded-2xl border border-white/5">
+                  {(['income', 'expense'] as const).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setEditingTransaction({ ...editingTransaction, type })}
+                      className={cn(
+                        "flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
+                        editingTransaction.type === type 
+                          ? (type === 'income' ? "bg-green-500 text-white" : "bg-red-500 text-white")
+                          : "text-white/40 hover:text-white"
+                      )}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-white/40 uppercase tracking-widest ml-1">Date</label>
+                  <input 
+                    type="date" 
+                    required
+                    value={editingTransaction.date}
+                    onChange={(e) => setEditingTransaction({ ...editingTransaction, date: e.target.value })}
+                    className="w-full bg-black border border-white/10 rounded-2xl p-3 text-sm text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-white/40 uppercase tracking-widest ml-1">Amount</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    required
+                    value={editingTransaction.amount}
+                    onChange={(e) => setEditingTransaction({ ...editingTransaction, amount: e.target.value })}
+                    className="w-full bg-black border border-white/10 rounded-2xl p-3 text-sm text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-white/40 uppercase tracking-widest ml-1">Category</label>
+                <select 
+                  required
+                  value={editingTransaction.category_id}
+                  onChange={(e) => setEditingTransaction({ ...editingTransaction, category_id: e.target.value })}
+                  className="w-full bg-black border border-white/10 rounded-2xl p-3 text-sm text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all appearance-none"
+                >
+                  <option value="">Select Category</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-white/40 uppercase tracking-widest ml-1">Note</label>
+                <textarea 
+                  value={editingTransaction.note || ''}
+                  onChange={(e) => setEditingTransaction({ ...editingTransaction, note: e.target.value })}
+                  className="w-full bg-black border border-white/10 rounded-2xl p-3 text-sm text-white focus:ring-2 focus:ring-blue-500/50 outline-none transition-all min-h-[80px] resize-none"
+                  placeholder="Add a note..."
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 px-6 py-3 border border-white/10 rounded-2xl text-sm font-bold text-white hover:bg-white/5 transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  disabled={saving}
+                  className="flex-[2] px-6 py-3 bg-white text-black rounded-2xl text-sm font-bold hover:bg-white/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {saving ? (
+                    <div className="w-4 h-4 border-2 border-black/20 border-t-black rounded-full animate-spin" />
+                  ) : null}
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
