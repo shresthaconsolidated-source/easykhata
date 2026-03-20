@@ -111,6 +111,7 @@ export default function ChatPage() {
       lowerText.includes('received') || 
       lowerText.includes('income') || 
       lowerText.includes('sold') || 
+      lowerText.includes('sale') || 
       lowerText.includes('profit') ||
       lowerText.includes('earned') ||
       lowerText.includes('plus') ||
@@ -139,17 +140,19 @@ export default function ChatPage() {
       lowerText.includes(c.name.toLowerCase())
     );
 
+    let matchedKeywordCategory: string | null = null;
     if (!category) {
       const keywordMap: Record<string, string> = {
         'taxi': 'Travel', 'bus': 'Travel', 'fuel': 'Travel', 'petrol': 'Travel', 'ride': 'Travel', 'uber': 'Travel', 'pathao': 'Travel',
         'food': 'Meals', 'dinner': 'Meals', 'lunch': 'Meals', 'breakfast': 'Meals', 'khaja': 'Meals', 'restaurant': 'Meals', 'momo': 'Meals', 'burger': 'Meals', 'chicken': 'Meals', 'candle': 'Supplies',
         'rent': 'Housing', 'electricity': 'Utilities', 'water': 'Utilities', 'internet': 'Utilities', 'wifi': 'Utilities',
-        'salary': 'Salary', 'sold': 'Sales', 'sale': 'Sales', 'bonus': 'Bonus'
+        'salary': 'Salary', 'sold': 'Sales', 'sale': 'Sales', 'sales': 'Sales', 'bonus': 'Bonus', 'inventory': 'Supplies', 'stock': 'Supplies'
       };
 
       for (const [kw, catName] of Object.entries(keywordMap)) {
         if (lowerText.includes(kw)) {
-          category = categories.find(c => c.name === catName);
+          matchedKeywordCategory = catName;
+          category = categories.find(c => c.name.toLowerCase() === catName.toLowerCase());
           if (category) break;
         }
       }
@@ -160,7 +163,11 @@ export default function ChatPage() {
        foundAmount = foundAmount * foundQuantity;
     }
 
-    const potentialCategoryName = (!category && text.split(' ').length > 0) ? text.split(' ')[0] : null;
+    const potentialCategoryName = (!category && matchedKeywordCategory) 
+      ? matchedKeywordCategory 
+      : (!category && text.split(' ').length > 0) 
+        ? text.split(' ')[0] 
+        : null;
 
     return {
       amount: foundAmount,
