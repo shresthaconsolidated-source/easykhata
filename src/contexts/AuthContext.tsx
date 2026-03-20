@@ -40,10 +40,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
+    const redirectTo = process.env.NEXT_PUBLIC_APP_URL 
+      ? `${process.env.NEXT_PUBLIC_APP_URL}/chat`
+      : typeof window !== 'undefined' 
+        ? `${window.location.origin}/chat` 
+        : undefined;
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: typeof window !== 'undefined' ? window.location.href : undefined
+        redirectTo
       }
     });
   };
