@@ -13,7 +13,10 @@ import {
   Calculator, 
   Tag as TagIcon,
   Calendar as CalendarIcon,
-  Package
+  Package,
+  Zap,
+  ArrowRight,
+  MessageCircle
 } from 'lucide-react';
 import { cn, formatCurrency } from '@/lib/utils';
 
@@ -30,9 +33,7 @@ interface Message {
 export default function ChatPage() {
   const { user } = useAuth();
   const { company } = useCompany();
-  const [messages, setMessages] = useState<Message[]>([
-    // ...
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [categories, setCategories] = useState<any[]>([]);
   const [pendingTransaction, setPendingTransaction] = useState<any>(null);
@@ -304,14 +305,58 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-180px)] lg:h-[calc(100vh-140px)] max-w-2xl mx-auto rounded-[1.5rem] lg:rounded-[2.5rem] bg-white/[0.02] border border-white/5 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden relative backdrop-blur-md">
-      <div className="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6 lg:space-y-8 scrollbar-hide">
-        {messages.length <= 1 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center space-y-3 opacity-0 animate-in fade-in duration-1000 fill-mode-forwards">
-            <h2 className="text-2xl font-medium tracking-tight text-white/90">Start tracking your business</h2>
-            <p className="text-sm text-white/30 max-w-[240px]">Type your first transaction below to see the magic happen.</p>
-            <div className="pt-4 px-4 py-2 bg-white/5 rounded-full border border-white/5 text-[10px] font-medium text-white/20 uppercase tracking-widest">
-              Example: "Taxi 2000 yesterday"
+    <div className="relative group max-w-2xl mx-auto h-[calc(100vh-180px)] lg:h-[calc(100vh-140px)]">
+      {/* Dynamic Background Glows */}
+      <div className="absolute -inset-4 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-transparent blur-[100px] opacity-50 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
+
+      <div className="flex flex-col h-full rounded-[2rem] lg:rounded-[3rem] bg-[#0c0c0d]/80 border border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,1)] overflow-hidden relative backdrop-blur-3xl ring-1 ring-white/5">
+      <div className="flex-1 overflow-y-auto p-4 lg:p-10 space-y-8 scrollbar-hide relative">
+        {messages.length === 0 ? (
+          <div className="h-full flex flex-col items-center justify-center text-center space-y-12">
+            {/* Animated Core Logo/Icon */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-blue-500/20 blur-[60px] rounded-full animate-pulse" />
+              <div className="relative w-24 h-24 rounded-[2.5rem] bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center shadow-2xl ring-1 ring-white/20 group hover:scale-110 transition-transform duration-700">
+                <Sparkles className="w-10 h-10 text-white animate-bounce" />
+              </div>
+            </div>
+
+            <div className="space-y-4 max-w-sm mx-auto">
+              <h2 className="text-4xl font-black tracking-tighter text-white">
+                How can <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">AI</span> help today?
+              </h2>
+              <p className="text-base text-white/30 font-medium leading-relaxed">
+                Log transactions, track expenses, or analyze your profit in seconds.
+              </p>
+            </div>
+
+            {/* Quick Start Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg px-4">
+              {[
+                { label: "Spent 2000 on Fuel", icon: Zap },
+                { label: "Sold 10 items at 300", icon: Package },
+                { label: "Salary 50000 received", icon: ArrowRight },
+                { label: "Taxi 500 today", icon: MessageCircle }
+              ].map((item, idx) => (
+                <button 
+                  key={idx}
+                  onClick={() => setInput(item.label)}
+                  className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 text-left hover:bg-white/[0.06] hover:border-blue-500/30 transition-all group relative overflow-hidden active:scale-95"
+                >
+                  <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-100 transition-opacity">
+                    <item.icon className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Quick Action</p>
+                  <p className="text-sm font-bold text-white/80 group-hover:text-blue-400 transition-colors">"{item.label}"</p>
+                </button>
+              ))}
+            </div>
+
+            {/* Pulse Indicator */}
+            <div className="flex items-center gap-3 px-6 py-2.5 rounded-full bg-blue-500/5 border border-blue-500/10 text-[9px] font-black uppercase tracking-[0.3em] text-blue-400/60 animate-in fade-in slide-in-from-top-4 duration-1000">
+              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+               Smart Detection Active
             </div>
           </div>
         ) : (
@@ -485,20 +530,23 @@ export default function ChatPage() {
         <div className="relative group max-w-xl mx-auto">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500"></div>
           <div className="relative flex flex-col gap-3 lg:gap-4">
-            <div className="flex-1 bg-[#1a1a1c] rounded-2xl border border-white/10 group-focus-within:border-blue-500/50 transition-all shadow-lg overflow-hidden flex items-center pr-4">
+            <div className="flex-1 bg-white/[0.03] backdrop-blur-2xl rounded-2xl border border-white/10 group-focus-within:border-blue-500/50 group-focus-within:bg-white/[0.05] transition-all shadow-2xl overflow-hidden flex items-center pr-4">
               <input 
                 type="text" 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                 placeholder="Type an expense or income..."
-                className="flex-1 bg-transparent px-4 lg:px-6 py-3 lg:py-4 text-sm font-medium outline-none placeholder:text-white/10"
+                className="flex-1 bg-transparent px-4 lg:px-6 py-4 lg:py-5 text-sm font-semibold outline-none placeholder:text-white/10 text-white"
               />
               <button 
                 onClick={handleSend}
-                className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+                className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center hover:bg-blue-500 hover:scale-105 transition-all active:scale-95 shadow-lg shadow-blue-500/40 group/btn"
               >
-                <Send className="w-4 h-4 text-white" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-white blur-lg opacity-0 group-hover/btn:opacity-20" />
+                  <Send className="w-5 h-5 text-white relative z-10" />
+                </div>
               </button>
             </div>
             <div className="flex gap-4 px-4 lg:px-6 text-[8px] lg:text-[9px] font-bold uppercase tracking-[0.2em] text-white/10">
@@ -513,5 +561,6 @@ export default function ChatPage() {
         </p>
       </div>
     </div>
+  </div>
   );
 }

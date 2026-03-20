@@ -53,7 +53,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-72 bg-[#0A0A0A] shadow-[inset_-1px_0_0_rgba(255,255,255,0.05)] transition-transform lg:static lg:translate-x-0",
+        "fixed inset-y-0 left-0 z-50 w-72 bg-[#050505]/80 backdrop-blur-3xl border-r border-white/5 transition-transform lg:static lg:translate-x-0",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
@@ -96,17 +96,23 @@ export function Shell({ children }: { children: React.ReactNode }) {
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
-                    "group flex items-center gap-3 px-4 py-3 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-300",
+                    "group flex items-center gap-3 px-4 py-3 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all duration-500 relative overflow-hidden",
                     isActive
-                      ? "bg-white/5 text-white border border-white/10 shadow-lg"
-                      : "text-white/30 hover:text-white/70 hover:bg-white/[0.02] border border-transparent"
+                      ? "bg-white/[0.05] text-white border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05)]"
+                      : "text-white/20 hover:text-white/70 hover:bg-white/[0.02] border border-transparent"
                   )}
                 >
+                  {isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent blur-xl opacity-50" />
+                  )}
                   <item.icon className={cn(
-                    "w-4 h-4 transition-colors duration-300",
-                    isActive ? "text-blue-500" : "text-white/20 group-hover:text-white/40"
+                    "w-4 h-4 transition-all duration-500 relative z-10",
+                    isActive ? "text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.5)] scale-110" : "text-white/20 group-hover:text-white/40"
                   )} />
-                  {item.name}
+                  <span className="relative z-10">{item.name}</span>
+                  {item.name === 'Chat' && !isActive && (
+                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.8)]" />
+                  )}
                 </Link>
               );
             })}
