@@ -6,22 +6,16 @@ export const dynamic = 'force-dynamic';
 // This route is called by Vercel Cron every Friday at 8:00 AM Nepal time (2:15 AM UTC)
 // Schedule: "15 2 * * 5" in vercel.json
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!, // Server-side only, not exposed to client
-);
 
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-
-async function sendEmail(to: string, subject: string, html: string) {
-  if (!RESEND_API_KEY) {
+async function sendEmail(to: string, subject: string, html: string, resendKey: string | undefined) {
+  if (!resendKey) {
     console.warn('[Weekly Summary] RESEND_API_KEY not set. Skipping email.');
     return;
   }
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Authorization': `Bearer ${resendKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
@@ -106,7 +100,13 @@ function buildEmailHtml(company: any, income: number, expense: number, topCatego
 }
 
 export async function GET(request: Request) {
-  // Verify Vercel cron secret
+  // Create clients inside handler — env vars only available at runtime, not build time
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+  const RESEND_API_KEY = process.env.RESEND_API_KEY;
+
   const authHeader = request.headers.get('authorization');
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -168,7 +168,7 @@ export async function GET(request: Request) {
       }
 
       const html = buildEmailHtml(company, income, expense, topCatName, company.currency || 'NPR');
-      await sendEmail(email, `📊 Your weekly summary — ${company.name}`, html);
+      await sendEmail(email, `📊 Your weekly summary — ${company.name}`, html, RESEND_API_KEY);
       emailsSent++;
     }
 

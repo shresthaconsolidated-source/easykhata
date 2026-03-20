@@ -5,12 +5,13 @@ export const dynamic = 'force-dynamic';
 
 const ADMIN_EMAIL = 'shresthaconsolidated@gmail.com';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
 export async function GET(req: NextRequest) {
+  // Create client inside handler so env vars are available at runtime, not build time
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
   // 1. Verify the caller is the admin
   const authHeader = req.headers.get('authorization');
   if (!authHeader?.startsWith('Bearer ')) {
@@ -71,7 +72,6 @@ export async function GET(req: NextRequest) {
     };
   }));
 
-  // Overall platform stats
   const totalUsers = results.length;
   const totalTxToday = results.reduce((s, r) => s + r.entriesToday, 0);
   const totalTxAll = results.reduce((s, r) => s + r.totalEntries, 0);
