@@ -70,6 +70,8 @@ export default function TransactionsPage() {
 
     if (!error) {
       setTransactions(transactions.filter(t => t.id !== id));
+    } else {
+      alert(`Error deleting transaction: ${error.message}`);
     }
   };
 

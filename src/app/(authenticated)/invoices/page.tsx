@@ -14,7 +14,8 @@ import {
   Send, 
   Clock, 
   CheckCircle2, 
-  AlertCircle 
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -40,6 +41,24 @@ export default function InvoicesPage() {
 
     if (data) setInvoices(data);
     setLoading(false);
+  };
+
+  const deleteInvoice = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this invoice? This action cannot be undone.')) return;
+    
+    // Delete items first if not cascaded (though server-side should handle this)
+    await supabase.from('invoice_items').delete().eq('invoice_id', id);
+    
+    const { error } = await supabase
+      .from('invoices')
+      .delete()
+      .eq('id', id);
+
+    if (!error) {
+      setInvoices(invoices.filter(inv => inv.id !== id));
+    } else {
+      alert(`Error deleting invoice: ${error.message}`);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -127,6 +146,12 @@ export default function InvoicesPage() {
               >
                 <Printer className="w-4 h-4" />
               </Link>
+              <button 
+                onClick={() => deleteInvoice(inv.id)}
+                className="p-2.5 bg-white/5 hover:bg-red-500/10 text-white/20 hover:text-red-400 rounded-xl transition-all border border-white/5"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
         ))}

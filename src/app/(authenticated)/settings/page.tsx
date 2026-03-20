@@ -94,6 +94,8 @@ export default function SettingsPage() {
     if (!error) {
       fetchSettings();
       refreshCompany();
+    } else {
+      alert(`Error deleting category: ${error.message}`);
     }
   };
 

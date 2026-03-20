@@ -49,6 +49,8 @@ export const ClientManagerModal = ({ isOpen, onClose, companyId, onUpdate }: Cli
     if (!error) {
       fetchClients();
       onUpdate();
+    } else {
+      alert(`Error deleting client: ${error.message}`);
     }
   };
 

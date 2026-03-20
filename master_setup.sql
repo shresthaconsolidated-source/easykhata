@@ -58,10 +58,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Companies: Members can view
+-- Companies: Members can manage (view/delete)
 DROP POLICY IF EXISTS "Members can view company details" ON companies;
-CREATE POLICY "Members can view company details" ON companies
-    FOR SELECT USING (is_member_of(id));
+DROP POLICY IF EXISTS "Members can manage company" ON companies;
+CREATE POLICY "Members can manage company" ON companies
+    FOR ALL USING (is_member_of(id));
 
 -- Transactions: Members can CRUD
 DROP POLICY IF EXISTS "Members can manage transactions" ON transactions;
