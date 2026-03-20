@@ -36,9 +36,61 @@ END $$;
 --------------------------------------------------------------------------------
 
 -- Enable RLS on core tables
+ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.company_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.invoice_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invitations ENABLE ROW LEVEL SECURITY;
+
+-- Global helper function (Ensure it exists)
+CREATE OR REPLACE FUNCTION public.is_member_of(comp_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM public.company_members
+        WHERE company_id = comp_id AND user_id = auth.uid()
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Companies: Members can view
+DROP POLICY IF EXISTS "Members can view company details" ON companies;
+CREATE POLICY "Members can view company details" ON companies
+    FOR SELECT USING (is_member_of(id));
+
+-- Transactions: Members can CRUD
+DROP POLICY IF EXISTS "Members can manage transactions" ON transactions;
+CREATE POLICY "Members can manage transactions" ON transactions
+    FOR ALL USING (is_member_of(company_id));
+
+-- Categories: Members can CRUD
+DROP POLICY IF EXISTS "Members can manage categories" ON categories;
+CREATE POLICY "Members can manage categories" ON categories
+    FOR ALL USING (is_member_of(company_id));
+
+-- Clients: Members can CRUD
+DROP POLICY IF EXISTS "Members can manage clients" ON clients;
+CREATE POLICY "Members can manage clients" ON clients
+    FOR ALL USING (is_member_of(company_id));
+
+-- Invoices: Members can CRUD
+DROP POLICY IF EXISTS "Members can manage invoices" ON invoices;
+CREATE POLICY "Members can manage invoices" ON invoices
+    FOR ALL USING (is_member_of(company_id));
+
+-- Invoice Items: Members can CRUD (via Invoice member check)
+DROP POLICY IF EXISTS "Members can manage invoice items" ON invoice_items;
+CREATE POLICY "Members can manage invoice items" ON invoice_items
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM public.invoices
+            WHERE id = invoice_id AND is_member_of(company_id)
+        )
+    );
 
 -- Fix Circular RLS on company_members: allows users to see their own membership
 DROP POLICY IF EXISTS "Members can view company membership" ON company_members;
