@@ -1,21 +1,12 @@
--- Fix RLS circularity and membership joining logic
+-- Allow all authenticated users to discover profiles for direct team invites and list displays
+DROP POLICY IF EXISTS "Anyone can view profiles" ON public.profiles;
+CREATE POLICY "Anyone can view profiles" ON public.profiles FOR SELECT USING (true);
 
--- 1. Fix the circular RLS on company_members
--- This ensures you can always see your own membership record 
--- even if you aren't yet "officially" recognized by the helper function.
-DROP POLICY IF EXISTS "Members can view company membership" ON company_members;
-
-CREATE POLICY "Members can view company membership" ON company_members
-  FOR SELECT USING (is_member_of(company_id) OR auth.uid() = user_id);
-
--- 2. Ensure users can join a company as a member (not just owner)
-DROP POLICY IF EXISTS "Authenticated users can join as owner" ON company_members;
-DROP POLICY IF EXISTS "Authenticated users can join company" ON company_members;
-
-CREATE POLICY "Authenticated users can join company" ON company_members
-  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
-
--- 3. Ensure profiles are visible
-DROP POLICY IF EXISTS "Users can see their own profile" ON profiles;
-CREATE POLICY "Users can see their own profile" ON profiles
-  FOR SELECT USING (auth.uid() = id);
+-- Allow users to leave a company, OR owners to remove any member from their company
+DROP POLICY IF EXISTS "Members can leave or owners can remove" ON public.company_members;
+CREATE POLICY "Members can leave or owners can remove" ON public.company_members FOR DELETE USING (
+  auth.uid() = user_id OR
+  company_id IN (
+    SELECT company_id FROM public.company_members WHERE user_id = auth.uid() AND role = 'owner'
+  )
+);

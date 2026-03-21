@@ -105,15 +105,19 @@ export default function SettingsPage() {
   const processRemoveMember = async (userId: string, isSelf: boolean) => {
     if (!company) return;
     try {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('company_members')
-        .delete()
+        .delete({ count: 'exact' })
         .match({ company_id: company.id, user_id: userId });
         
       if (error) throw error;
+      if (count === 0) {
+        throw new Error("Unable to modify team. Please ensure you ran the RLS SQL patch.");
+      }
       
       if (isSelf) {
-        refreshCompany();
+        await signOut();
+        window.location.href = '/';
       } else {
         fetchSettings();
       }
