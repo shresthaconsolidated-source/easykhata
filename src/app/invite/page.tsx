@@ -6,12 +6,14 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { Building2, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useCompany } from '@/contexts/CompanyContext';
 
 function InviteContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const router = useRouter();
   const { user, signInWithGoogle, loading: authLoading } = useAuth();
+  const { refreshCompany } = useCompany();
   
   const [invite, setInvite] = useState<any>(null);
   const [company, setCompany] = useState<any>(null);
@@ -72,8 +74,11 @@ function InviteContent() {
       .update({ status: 'accepted' })
       .eq('id', invite.id);
 
-    // 3. Redirect to dashboard
-    router.push('/dashboard');
+    // 3. Refresh company context so the layout knows we have a company now
+    await refreshCompany();
+
+    // 4. Redirect to chat (preloaded with company detail)
+    router.push('/chat');
   };
 
   if (loading || authLoading) {
