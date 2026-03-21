@@ -23,7 +23,35 @@ export const InviteModal = ({ isOpen, onClose, companyId }: InviteModalProps) =>
     setLoading(true);
     setErrorText('');
     
-    // Insert into invitations table
+    // First, check if the user already has an easyKhata account
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existingUser) {
+      // User exists! Add them directly to the team
+      const { error: joinError } = await supabase
+        .from('company_members')
+        .insert({ company_id: companyId, user_id: existingUser.id, role: 'member' });
+      
+      if (joinError) {
+        if (joinError.code === '23505') { 
+          setErrorText("This user is already in your team.");
+        } else {
+          setErrorText("Failed to add user to team.");
+        }
+        setLoading(false);
+        return;
+      }
+      
+      setInviteLink('DIRECT_ADDED');
+      setLoading(false);
+      return;
+    }
+
+    // User is new, generate an invite link
     const { data, error } = await supabase
       .from('invitations')
       .insert({ email, company_id: companyId, role: 'member' })
@@ -32,7 +60,7 @@ export const InviteModal = ({ isOpen, onClose, companyId }: InviteModalProps) =>
 
     if (error) {
       console.error("Error creating invite:", error);
-      setErrorText("Failed to generate invitation. Ensure the invitations table exists.");
+      setErrorText("Failed to generate invitation.");
       setLoading(false);
       return;
     }
@@ -87,7 +115,24 @@ export const InviteModal = ({ isOpen, onClose, companyId }: InviteModalProps) =>
               <X className="w-6 h-6" />
             </button>
 
-            {inviteLink ? (
+            {inviteLink === 'DIRECT_ADDED' ? (
+              <div className="py-6 space-y-6 animate-in fade-in zoom-in duration-500">
+                 <div className="w-20 h-20 rounded-[2rem] bg-emerald-500/10 flex items-center justify-center mx-auto text-emerald-400 ring-1 ring-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
+                    <Check className="w-8 h-8" />
+                 </div>
+                 <div>
+                   <h2 className="text-2xl font-black text-white mb-2 italic uppercase">Member Added!</h2>
+                   <p className="text-white/40 font-medium text-sm px-4">This user already has an easyKhata account, so they were instantly added to your team. No invite link needed!</p>
+                 </div>
+                 
+                 <button 
+                   onClick={resetAndClose}
+                   className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black py-4 rounded-2xl transition-all shadow-xl shadow-emerald-500/10 active:scale-95"
+                 >
+                   Got it
+                 </button>
+              </div>
+            ) : inviteLink ? (
               <div className="py-6 space-y-6 animate-in fade-in zoom-in duration-500">
                  <div className="w-20 h-20 rounded-[2rem] bg-emerald-500/10 flex items-center justify-center mx-auto text-emerald-400 ring-1 ring-emerald-500/20">
                     <LinkIcon className="w-8 h-8" />

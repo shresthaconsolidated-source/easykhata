@@ -27,6 +27,7 @@ import { ClientManagerModal } from '@/components/settings/ClientManagerModal';
 import { InviteModal } from '@/components/settings/InviteModal';
 import { CategoryModal } from '@/components/settings/CategoryModal';
 import { DeleteCompanyModal } from '@/components/settings/DeleteCompanyModal';
+import { ConfirmActionModal } from '@/components/settings/ConfirmActionModal';
 import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
@@ -41,6 +42,7 @@ export default function SettingsPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [actionTarget, setActionTarget] = useState<{ type: 'category' | 'leave' | 'remove', id: string, name?: string } | null>(null);
   
   // SQL Editor State
   const [sqlQuery, setSqlQuery] = useState('');
@@ -91,7 +93,6 @@ export default function SettingsPage() {
   };
 
   const deleteCategory = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this category?')) return;
     const { error } = await supabase.from('categories').delete().eq('id', id);
     if (!error) {
       fetchSettings();
@@ -101,11 +102,8 @@ export default function SettingsPage() {
     }
   };
 
-  const handleRemoveMember = async (userId: string, isSelf: boolean) => {
+  const processRemoveMember = async (userId: string, isSelf: boolean) => {
     if (!company) return;
-    const action = isSelf ? 'leave' : 'remove this member from';
-    if (!confirm(`Are you sure you want to ${action} the team?`)) return;
-
     try {
       const { error } = await supabase
         .from('company_members')
@@ -115,10 +113,9 @@ export default function SettingsPage() {
       if (error) throw error;
       
       if (isSelf) {
-        // Leaving forces a global context update which will route to /onboarding
         refreshCompany();
       } else {
-        fetchSettings(); // Stay on page, just refresh the list
+        fetchSettings();
       }
     } catch (err: any) {
       alert(`Error updating team: ${err.message}`);
@@ -254,12 +251,12 @@ export default function SettingsPage() {
                  
                  {/* Quick Actions */}
                  {m.user_id === user?.id && m.role === 'member' && (
-                   <button onClick={() => handleRemoveMember(m.user_id, true)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors border border-red-500/20">
+                   <button onClick={() => setActionTarget({ type: 'leave', id: m.user_id })} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors border border-red-500/20">
                      <span className="text-[10px] font-black uppercase tracking-widest px-2">Leave</span>
                    </button>
                  )}
                  {isOwner && m.role !== 'owner' && (
-                   <button onClick={() => handleRemoveMember(m.user_id, false)} className="p-2 bg-white/5 hover:bg-red-500/10 text-white/40 hover:text-red-500 rounded-lg transition-colors border border-white/5 hover:border-red-500/20">
+                   <button onClick={() => setActionTarget({ type: 'remove', id: m.user_id, name: m.profiles?.full_name })} className="p-2 bg-white/5 hover:bg-red-500/10 text-white/40 hover:text-red-500 rounded-lg transition-colors border border-white/5 hover:border-red-500/20">
                      <span className="text-[10px] font-black uppercase tracking-widest px-2">Remove</span>
                    </button>
                  )}
@@ -322,7 +319,7 @@ export default function SettingsPage() {
                   )}>{cat.type}</p>
                </div>
                <button 
-                 onClick={() => deleteCategory(cat.id)}
+                 onClick={() => setActionTarget({ type: 'category', id: cat.id, name: cat.name })}
                  className="p-2 opacity-0 group-hover:opacity-100 text-white/10 hover:text-red-400 transition-all"
                >
                  <Trash2 className="w-4 h-4" />
@@ -462,6 +459,30 @@ export default function SettingsPage() {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleResetData}
         companyName={company?.name || 'Your Company'}
+      />
+      <ConfirmActionModal 
+        isOpen={actionTarget !== null}
+        onClose={() => setActionTarget(null)}
+        onConfirm={async () => {
+          if (!actionTarget) return;
+          if (actionTarget.type === 'category') await deleteCategory(actionTarget.id);
+          else if (actionTarget.type === 'leave') await processRemoveMember(actionTarget.id, true);
+          else if (actionTarget.type === 'remove') await processRemoveMember(actionTarget.id, false);
+        }}
+        isDestructive={true}
+        title={
+          actionTarget?.type === 'category' ? 'Delete Category?' :
+          actionTarget?.type === 'leave' ? 'Leave Team?' : 'Remove Member?'
+        }
+        description={
+          actionTarget?.type === 'category' ? `Are you sure you want to permanently delete the "${actionTarget.name}" category? This cannot be undone.` :
+          actionTarget?.type === 'leave' ? "You will lose access to all company data instantly and will need a new invite to rejoin." : 
+          `Are you sure you want to permanently remove ${actionTarget?.name || 'this member'} from the team? They will lose access instantly.`
+        }
+        actionText={
+          actionTarget?.type === 'category' ? "Yes, Delete" :
+          actionTarget?.type === 'leave' ? "Yes, Leave Team" : "Yes, Remove Member"
+        }
       />
     </div>
   );
