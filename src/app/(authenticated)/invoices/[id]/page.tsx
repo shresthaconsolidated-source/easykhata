@@ -144,7 +144,9 @@ export default function InvoiceDetailPage() {
       const fileName = `Invoice-${invoice.invoice_number}.pdf`;
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
       
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: `Invoice ${invoice.invoice_number}`,
@@ -154,6 +156,7 @@ export default function InvoiceDetailPage() {
         return;
       }
       
+      // Desktop Fallback: Download PDF directly
       const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -163,7 +166,7 @@ export default function InvoiceDetailPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      const message = `Here is your invoice (*${invoice.invoice_number}*). Please find the attached PDF Document downloaded to your device.\n\nPowered by easyKhata`;
+      const message = `Here is your invoice (*${invoice.invoice_number}*). \n\n*Note:* The PDF invoice has just been downloaded to your computer. Please drag and drop it here to attach it! \n\nPowered by easyKhata`;
       window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
       
     } catch (err) {
