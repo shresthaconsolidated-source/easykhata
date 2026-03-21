@@ -62,6 +62,17 @@ export default function InvoiceDetailPage() {
   const [company, setCompany] = useState<any>(null);
   const [sharing, setSharing] = useState(false);
 
+  const loadScript = (src: string) => {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve(true);
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  };
+
   useEffect(() => {
     if (user && id) {
       fetchInvoiceDetails();
@@ -110,9 +121,12 @@ export default function InvoiceDetailPage() {
     setSharing(true);
     
     try {
-      // Dynamically import to prevent Next.js SSR build errors with node dependencies
-      const html2canvas = (await import('html2canvas')).default;
-      const { jsPDF } = await import('jspdf');
+      // Load from CDN to prevent Next.js SSR build errors with node dependencies
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      
+      const html2canvas = (window as any).html2canvas;
+      const jsPDF = (window as any).jspdf.jsPDF;
 
       const element = document.getElementById('invoice-document');
       if (!element) throw new Error('Document not found');
