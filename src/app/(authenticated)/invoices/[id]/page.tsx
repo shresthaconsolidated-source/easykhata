@@ -4,7 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Printer, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Printer, MessageSquare, Loader2 } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { formatCurrency, cn } from '@/lib/utils';
 
@@ -60,6 +62,7 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<any>(null);
   const [items, setItems] = useState<any[]>([]);
   const [company, setCompany] = useState<any>(null);
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     if (user && id) {
@@ -104,6 +107,70 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const handleWhatsAppShare = async () => {
+    if (!invoice || !company || sharing) return;
+    setSharing(true);
+    
+    try {
+      const element = document.getElementById('invoice-document');
+      if (!element) throw new Error('Document not found');
+      
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfBlob = pdf.output('blob');
+      
+      const fileName = `Invoice-${invoice.invoice_number}.pdf`;
+      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+      
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Invoice ${invoice.invoice_number}`,
+          text: `Here is your invoice from ${company.name}`
+        });
+        setSharing(false);
+        return;
+      }
+      
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      const message = `Here is your invoice (*${invoice.invoice_number}*). Please find the attached PDF Document downloaded to your device.\n\nPowered by easyKhata`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+      
+    } catch (err) {
+      console.error('PDF sharing error:', err);
+      const lines = items.map((item: any) => `  • ${item.description}: ${item.quantity} x ${Number(item.rate).toLocaleString()} = ${company?.currency || 'NPR'} ${Number(item.amount).toLocaleString()}`);
+      const fallbackMsg = [
+        `*Invoice from ${company?.name}*`,
+        `Invoice No: ${invoice.invoice_number}`,
+        `Client: ${invoice.client_name}`,
+        ``,
+        ...lines,
+        ``,
+        `*Total: ${company?.currency || 'NPR'} ${Number(invoice.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}*`,
+        `Due: ${format(new Date(invoice.due_date), 'MMM dd, yyyy')}`,
+        ``,
+        `Powered by easyKhata`
+      ].join('\n');
+      window.open(`https://wa.me/?text=${encodeURIComponent(fallbackMsg)}`, '_blank');
+    } finally {
+      setSharing(false);
+    }
+  };
+
   if (loading) return null;
 
   return (
@@ -118,25 +185,12 @@ export default function InvoiceDetailPage() {
         </button>
         <div className="flex gap-3">
           <button 
-            onClick={() => {
-              const lines = items.map((item: any) => `  • ${item.description}: ${item.quantity} x ${Number(item.rate).toLocaleString()} = ${company?.currency || 'NPR'} ${Number(item.amount).toLocaleString()}`);
-              const message = [
-                `*Invoice from ${company?.name}*`,
-                `Invoice No: ${invoice.invoice_number}`,
-                `Client: ${invoice.client_name}`,
-                ``,
-                ...lines,
-                ``,
-                `*Total: ${company?.currency || 'NPR'} ${Number(invoice.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}*`,
-                `Due: ${format(new Date(invoice.due_date), 'MMM dd, yyyy')}`,
-                ``,
-                `Powered by easyKhata`
-              ].join('\n');
-              window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-            }}
-            className="bg-[#25D366] hover:bg-[#20b859] text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 font-bold transition-all shadow-lg active:scale-95"
+            onClick={handleWhatsAppShare}
+            disabled={sharing}
+            className="bg-[#25D366] hover:bg-[#20b859] text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 font-bold transition-all shadow-lg active:scale-95 disabled:opacity-75 disabled:cursor-not-allowed"
           >
-            <MessageSquare className="w-4 h-4" /> WhatsApp
+            {sharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageSquare className="w-4 h-4" />}
+            {sharing ? 'Generating PDF...' : 'WhatsApp'}
           </button>
           <button 
             onClick={() => window.print()}
@@ -149,7 +203,7 @@ export default function InvoiceDetailPage() {
 
       {/* The Invoice Document - Wrapped in horizontal scroll for mobile */}
       <div className="w-full overflow-x-auto pb-12 custom-scrollbar print:overflow-visible">
-        <div className="max-w-[850px] min-w-[800px] md:min-w-[850px] mx-auto bg-white text-[#1a1f36] shadow-[0_64px_128px_-16px_rgba(0,0,0,0.1)] min-h-[1100px] flex flex-col font-sans print:shadow-none print:p-0 print:mx-0 print:w-full overflow-hidden rounded-sm">
+        <div id="invoice-document" className="max-w-[850px] min-w-[800px] md:min-w-[850px] mx-auto bg-white text-[#1a1f36] shadow-[0_64px_128px_-16px_rgba(0,0,0,0.1)] min-h-[1100px] flex flex-col font-sans print:shadow-none print:p-0 print:mx-0 print:w-full overflow-hidden rounded-sm">
         
         {/* Top Branding Header */}
         <div className="bg-[#1a5f7a] p-12 text-white flex justify-between items-center">

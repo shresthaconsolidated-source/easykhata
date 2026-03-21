@@ -39,12 +39,70 @@ export default function ChatPage() {
   const [pendingTransaction, setPendingTransaction] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  const [quickActions, setQuickActions] = useState<any[]>([
+    { label: "Purchased Raw Materials 25000", icon: Zap },
+    { label: "Wholesale Sale 50 units @ 1200", icon: Package },
+    { label: "Service Revenue 75000 received", icon: ArrowRight },
+    { label: "Office Rent & Utilities 45000", icon: MessageCircle }
+  ]);
 
   useEffect(() => {
     if (user && company) {
       fetchCategories(company.id);
+      fetchQuickActions(company.id);
     }
   }, [user, company]);
+
+  const fetchQuickActions = async (companyId: string) => {
+    const { data } = await supabase
+      .from('transactions')
+      .select('note, amount, type')
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false })
+      .limit(50);
+      
+    const defaults = [
+      { label: "Purchased Raw Materials 25000", icon: Zap },
+      { label: "Wholesale Sale 50 units @ 1200", icon: Package },
+      { label: "Service Revenue 75000 received", icon: ArrowRight },
+      { label: "Office Rent & Utilities 45000", icon: MessageCircle }
+    ];
+
+    if (data && data.length > 0) {
+      const freq: Record<string, { count: number, maxAmount: number, type: string, originalNote: string }> = {};
+      data.forEach(t => {
+        const words = t.note.toLowerCase().split(' ').filter((w: string) => w.length > 2);
+        if (words.length === 0) return;
+        
+        const key = words.slice(0, 2).join(' ');
+        if (!freq[key]) freq[key] = { count: 0, maxAmount: t.amount, type: t.type, originalNote: t.note };
+        freq[key].count++;
+        // Maintain the most typical amount for this common entry
+        if (t.amount > freq[key].maxAmount) freq[key].maxAmount = t.amount;
+      });
+      
+      const sorted = Object.values(freq).sort((a, b) => b.count - a.count).slice(0, 4);
+      
+      const actions = sorted.map(item => {
+         let icon = Zap;
+         if (item.type === 'income') icon = ArrowRight;
+         else if (item.originalNote.toLowerCase().includes('materials') || item.originalNote.toLowerCase().includes('inventory')) icon = Package;
+         else icon = MessageCircle;
+         
+         const label = `${item.originalNote} ${item.maxAmount}`;
+         return { label, icon };
+      });
+      
+      // Fallback to defaults if they haven't done 4 distinct transaction types
+      while (actions.length < 4) {
+         actions.push(defaults[actions.length]);
+      }
+      setQuickActions(actions);
+    } else {
+      setQuickActions(defaults);
+    }
+  };
 
   useEffect(() => {
     scrollToBottom();
@@ -371,14 +429,8 @@ export default function ChatPage() {
               </p>
             </div>
 
-            {/* Quick Start Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg px-4">
-              {[
-                { label: "Purchased Raw Materials 25000", icon: Zap },
-                { label: "Wholesale Sale 50 units @ 1200", icon: Package },
-                { label: "Service Revenue 75000 received", icon: ArrowRight },
-                { label: "Office Rent & Utilities 45000", icon: MessageCircle }
-              ].map((item, idx) => (
+              {quickActions.map((item, idx) => (
                 <button 
                   key={idx}
                   onClick={() => setInput(item.label)}
