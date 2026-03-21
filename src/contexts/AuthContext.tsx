@@ -40,19 +40,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    // Favor current window origin to avoid stale env var redirects (like localhost:3000)
-    const origin = typeof window !== 'undefined' 
-      ? window.location.origin 
-      : (process.env.NEXT_PUBLIC_APP_URL || 'https://easykhata.shresthaconsolidated.com');
+    try {
+      // Favor current window origin to avoid stale env var redirects (like localhost:3000)
+      const origin = typeof window !== 'undefined' 
+        ? window.location.origin 
+        : (process.env.NEXT_PUBLIC_APP_URL || 'https://easykhata.shresthaconsolidated.com');
+        
+      const redirectTo = `${origin}/chat`;
       
-    const redirectTo = `${origin}/chat`;
+      console.log('Initiating Google Login with redirect:', redirectTo);
 
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo
-      }
-    });
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        }
+      });
+
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Google Login Error:', err);
+      alert(`Login failed: ${err.message || 'Unknown error'}. Please check if your popup blocker is active.`);
+    }
   };
 
   return (
