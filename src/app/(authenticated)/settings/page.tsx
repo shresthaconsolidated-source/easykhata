@@ -111,8 +111,9 @@ export default function SettingsPage() {
 
       if (error) throw error;
       
-      // Redirect to home page
-      router.push('/');
+      // Sign out the user completely so they land on the unauthenticated home page
+      await signOut();
+      window.location.href = '/';
     } catch (err: any) {
       alert(`Error resetting data: ${err.message}`);
     }
