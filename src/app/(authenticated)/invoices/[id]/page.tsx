@@ -5,8 +5,6 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Printer, MessageSquare, Loader2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { formatCurrency, cn } from '@/lib/utils';
 
@@ -112,6 +110,10 @@ export default function InvoiceDetailPage() {
     setSharing(true);
     
     try {
+      // Dynamically import to prevent Next.js SSR build errors with node dependencies
+      const html2canvas = (await import('html2canvas')).default;
+      const { jsPDF } = await import('jspdf');
+
       const element = document.getElementById('invoice-document');
       if (!element) throw new Error('Document not found');
       
