@@ -101,6 +101,30 @@ export default function SettingsPage() {
     }
   };
 
+  const handleRemoveMember = async (userId: string, isSelf: boolean) => {
+    if (!company) return;
+    const action = isSelf ? 'leave' : 'remove this member from';
+    if (!confirm(`Are you sure you want to ${action} the team?`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('company_members')
+        .delete()
+        .match({ company_id: company.id, user_id: userId });
+        
+      if (error) throw error;
+      
+      if (isSelf) {
+        // Leaving forces a global context update which will route to /onboarding
+        refreshCompany();
+      } else {
+        fetchSettings(); // Stay on page, just refresh the list
+      }
+    } catch (err: any) {
+      alert(`Error updating team: ${err.message}`);
+    }
+  };
+
   const handleResetData = async () => {
     if (!company) return;
     
@@ -196,12 +220,14 @@ export default function SettingsPage() {
             <Users className="w-5 h-5 text-purple-400" />
             <h2 className="font-bold text-lg">Team Members</h2>
           </div>
-          <button 
-            onClick={() => setIsInviteModalOpen(true)}
-            className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 hover:text-blue-300 flex items-center gap-2 bg-blue-400/5 px-4 py-2 rounded-xl border border-blue-400/10 transition-all hover:bg-blue-400/10"
-          >
-            <UserPlus className="w-4 h-4" /> Invite
-          </button>
+          {isOwner && (
+            <button 
+              onClick={() => setIsInviteModalOpen(true)}
+              className="text-xs font-black uppercase tracking-[0.2em] text-blue-400 hover:text-blue-300 flex items-center gap-2 bg-blue-400/5 px-4 py-2 rounded-xl border border-blue-400/10 transition-all hover:bg-blue-400/10"
+            >
+              <UserPlus className="w-4 h-4" /> Invite
+            </button>
+          )}
         </div>
         <div className="bg-[#1c1c1e] rounded-[2.5rem] border border-white/5 shadow-xl overflow-hidden">
            {members.map((m) => (
@@ -211,15 +237,32 @@ export default function SettingsPage() {
                     {m.profiles?.full_name?.charAt(0) || m.profiles?.email?.charAt(0)}
                  </div>
                  <div>
-                   <p className="font-bold">{m.profiles?.full_name || 'Member'}</p>
+                   <p className="font-bold">
+                     {m.profiles?.full_name || 'Member'}
+                     {m.user_id === user?.id && <span className="text-white/40 ml-1">(You)</span>}
+                   </p>
                    <p className="text-sm text-white/40">{m.profiles?.email}</p>
                  </div>
                </div>
-               <div className={cn(
-                 "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                 m.role === 'owner' ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-white/5 text-white/40 border-white/10"
-               )}>
-                 {m.role}
+               <div className="flex items-center gap-4">
+                 <div className={cn(
+                   "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                   m.role === 'owner' ? "bg-purple-500/10 text-purple-400 border-purple-500/20" : "bg-white/5 text-white/40 border-white/10"
+                 )}>
+                   {m.role}
+                 </div>
+                 
+                 {/* Quick Actions */}
+                 {m.user_id === user?.id && m.role === 'member' && (
+                   <button onClick={() => handleRemoveMember(m.user_id, true)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-colors border border-red-500/20">
+                     <span className="text-[10px] font-black uppercase tracking-widest px-2">Leave</span>
+                   </button>
+                 )}
+                 {isOwner && m.role !== 'owner' && (
+                   <button onClick={() => handleRemoveMember(m.user_id, false)} className="p-2 bg-white/5 hover:bg-red-500/10 text-white/40 hover:text-red-500 rounded-lg transition-colors border border-white/5 hover:border-red-500/20">
+                     <span className="text-[10px] font-black uppercase tracking-widest px-2">Remove</span>
+                   </button>
+                 )}
                </div>
              </div>
            ))}
