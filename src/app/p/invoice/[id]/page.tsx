@@ -4,7 +4,10 @@ import { notFound } from 'next/navigation';
 
 export const revalidate = 0;
 
-export default async function PublicInvoicePage({ params }: { params: { id: string } }) {
+export default async function PublicInvoicePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params;
+  const id = params.id;
+  
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   // VERY IMPORTANT: Use Service Role Key to bypass RLS for public invoice viewing authenticated only by the secure unguessable UUID.
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
@@ -20,7 +23,7 @@ export default async function PublicInvoicePage({ params }: { params: { id: stri
   const { data: invoice, error } = await supabaseAdmin
     .from('invoices')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .maybeSingle();
 
   if (error || !invoice) {

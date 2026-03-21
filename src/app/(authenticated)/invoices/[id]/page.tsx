@@ -108,7 +108,7 @@ export default function InvoiceDetailPage() {
   const handleWhatsAppShare = async () => {
     if (!invoice || !company) return;
     
-    const url = `${window.location.origin}/public/invoice/${invoice.id}`;
+    const url = `${window.location.origin}/p/invoice/${invoice.id}`;
     const message = `Here is your invoice (*${invoice.invoice_number}*). Click here to view and download it securely:\n${url}\n\nPowered by easyKhata`;
     
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -131,7 +131,7 @@ export default function InvoiceDetailPage() {
 
   const handleCopyLink = () => {
     if (!invoice) return;
-    const url = `${window.location.origin}/public/invoice/${invoice.id}`;
+    const url = `${window.location.origin}/p/invoice/${invoice.id}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
