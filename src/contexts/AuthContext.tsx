@@ -40,11 +40,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    const redirectTo = process.env.NEXT_PUBLIC_APP_URL 
-      ? `${process.env.NEXT_PUBLIC_APP_URL}/chat`
-      : typeof window !== 'undefined' 
-        ? `${window.location.origin}/chat` 
-        : undefined;
+    // Favor current window origin to avoid stale env var redirects (like localhost:3000)
+    const origin = typeof window !== 'undefined' 
+      ? window.location.origin 
+      : (process.env.NEXT_PUBLIC_APP_URL || 'https://easykhata.shresthaconsolidated.com');
+      
+    const redirectTo = `${origin}/chat`;
 
     await supabase.auth.signInWithOAuth({
       provider: 'google',
