@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { Building2, MapPin, Hash, Coins, ArrowRight } from 'lucide-react';
+import { Building2, MapPin, Hash, Coins, ArrowRight, LogOut } from 'lucide-react';
 
 const DEFAULT_CATEGORIES = [
   { name: 'Sales', type: 'income' },
@@ -20,7 +21,8 @@ const DEFAULT_CATEGORIES = [
 ];
 
 export default function OnboardingPage() {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const { refreshCompany } = useCompany();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -90,8 +92,11 @@ export default function OnboardingPage() {
         .insert(categoriesToInsert);
 
       if (catError) throw catError;
+      
+      // 4. Update the CompanyContext so the layout guard doesn't loop back to /onboarding
+      await refreshCompany();
 
-      // 4. Redirect to Chat
+      // 5. Redirect to Chat
       router.push('/chat');
     } catch (err: any) {
       console.error('Onboarding Error:', err);
@@ -183,6 +188,17 @@ export default function OnboardingPage() {
             {!loading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
           </button>
         </form>
+
+        <button 
+          onClick={() => {
+            signOut();
+            router.push('/');
+          }}
+          className="w-full flex items-center justify-center gap-2 py-4 text-white/20 hover:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] transition-all group"
+        >
+          <LogOut className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+          Sign Out & Exit
+        </button>
       </div>
     </div>
   );

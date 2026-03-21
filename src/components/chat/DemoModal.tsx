@@ -109,7 +109,7 @@ export const DemoModal = ({ isOpen, onClose }: DemoModalProps) => {
                         transition={{ delay: 0.8 }}
                         className="bg-blue-600 px-5 py-4 rounded-[1.5rem] rounded-tr-none text-xs font-bold leading-relaxed shadow-xl"
                       >
-                        "Just paid 5000 for office rent"
+                        "Sold 100 units at 500 each"
                       </motion.div>
 
                       <motion.div 
@@ -126,11 +126,11 @@ export const DemoModal = ({ isOpen, onClose }: DemoModalProps) => {
                             <div className="flex justify-between items-end">
                                <div className="p-2 bg-white/5 rounded-lg border border-white/5">
                                   <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Amount</p>
-                                  <p className="text-lg font-black tracking-tight">5,000.00</p>
+                                  <p className="text-lg font-black tracking-tight">50,000.00</p>
                                </div>
                                <div className="p-2 bg-white/5 rounded-lg border border-white/5 text-right">
                                   <p className="text-[8px] font-black text-white/20 uppercase tracking-widest">Type</p>
-                                  <p className="text-xs font-black text-red-400 uppercase tracking-widest">Expense</p>
+                                  <p className="text-xs font-black text-green-400 uppercase tracking-widest">Income</p>
                                </div>
                             </div>
                             <div className="p-3 bg-blue-500 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] text-center shadow-lg shadow-blue-500/20">

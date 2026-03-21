@@ -113,7 +113,8 @@ export default function ChatPage() {
       lowerText.includes('sold') || lowerText.includes('sale') ||
       lowerText.includes('profit') || lowerText.includes('earned') ||
       lowerText.includes('plus') || lowerText.includes('salary') ||
-      lowerText.includes('sales') ||
+      lowerText.includes('sales') || lowerText.includes('revenue') ||
+      lowerText.includes('wholesale') || lowerText.includes('b2b') ||
       // Nepali Romanized income words
       lowerText.includes('bechyo') || lowerText.includes('bechi') ||  // sold
       lowerText.includes('paisa aayo') || lowerText.includes('aayo') ||  // money came
@@ -155,6 +156,8 @@ export default function ChatPage() {
         'salary': 'Salary', 'sold': 'Sales', 'sale': 'Sales', 'sales': 'Sales',
         'bonus': 'Bonus', 'inventory': 'Supplies', 'stock': 'Supplies',
         'candle': 'Supplies', 'khaja': 'Meals',
+        'cogs': 'Supplies', 'materials': 'Supplies', 'raw materials': 'Supplies',
+        'wholesale': 'Sales', 'revenue': 'Sales', 'consulting': 'Sales',
         // --- Nepali Romanized ---
         // Travel
         'gadi': 'Travel', 'sawa': 'Travel', 'tempo': 'Travel', 'auto': 'Travel',
@@ -371,10 +374,10 @@ export default function ChatPage() {
             {/* Quick Start Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg px-4">
               {[
-                { label: "Spent 2000 on Fuel", icon: Zap },
-                { label: "Sold 10 items at 300", icon: Package },
-                { label: "Salary 50000 received", icon: ArrowRight },
-                { label: "Taxi 500 today", icon: MessageCircle }
+                { label: "Purchased Raw Materials 25000", icon: Zap },
+                { label: "Wholesale Sale 50 units @ 1200", icon: Package },
+                { label: "Service Revenue 75000 received", icon: ArrowRight },
+                { label: "Office Rent & Utilities 45000", icon: MessageCircle }
               ].map((item, idx) => (
                 <button 
                   key={idx}
@@ -588,8 +591,8 @@ export default function ChatPage() {
             </div>
             <div className="flex gap-4 px-4 lg:px-6 text-[8px] lg:text-[9px] font-bold uppercase tracking-[0.2em] text-white/10">
                <span>Examples:</span>
-               <span className="text-white/20 italic">"Taxi 2000"</span>
-               <span className="text-white/20 italic">"Sold 5000"</span>
+               <span className="text-white/20 italic">"Inventory 15000"</span>
+               <span className="text-white/20 italic">"Wholesale 25000"</span>
             </div>
           </div>
         </div>
