@@ -49,6 +49,8 @@ export default function SettingsPage() {
   const [sqlExecuting, setSqlExecuting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
+  const isOwner = members.some(m => m.user_id === user?.id && m.role === 'owner');
+
   useEffect(() => {
     if (user && company) {
       fetchSettings();
@@ -288,8 +290,9 @@ export default function SettingsPage() {
       </section>
 
       {/* SQL Editor (Advanced) */}
-      <section className="space-y-6 pt-12 border-t border-white/5">
-        <div className="flex items-center justify-between">
+      {isOwner && (
+        <section className="space-y-6 pt-12 border-t border-white/5">
+          <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Database className="w-5 h-5 text-amber-400" />
             <h2 className="font-bold text-lg">Advanced SQL Console</h2>
@@ -346,30 +349,33 @@ export default function SettingsPage() {
             )}
           </div>
         )}
-      </section>
+        </section>
+      )}
 
       {/* DANGER ZONE */}
-      <section className="pt-12 border-t border-red-500/10">
-        <div className="flex items-center gap-3 mb-6">
-          <AlertTriangle className="w-5 h-5 text-red-500" />
-          <h2 className="font-bold text-lg text-red-500">Danger Zone</h2>
-        </div>
-        
-        <div className="bg-red-500/[0.02] border border-red-500/10 p-10 rounded-[3rem] flex flex-col md:flex-row items-center justify-between gap-8">
-           <div className="max-w-md">
-              <h3 className="font-black text-xl text-white mb-2 italic uppercase tracking-tight">Reset Business Data</h3>
-              <p className="text-white/40 text-sm leading-relaxed">
-                Permanently delete all transactions, invoices, customers, and business settings. Your account stays active, but you'll start fresh.
-              </p>
-           </div>
-           <button 
-              onClick={() => setIsDeleteModalOpen(true)}
-              className="px-10 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white font-black rounded-2xl border border-red-500/20 transition-all active:scale-95 whitespace-nowrap"
-           >
-              Reset All Data
-           </button>
-        </div>
-      </section>
+      {isOwner && (
+        <section className="pt-12 border-t border-red-500/10">
+          <div className="flex items-center gap-3 mb-6">
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+            <h2 className="font-bold text-lg text-red-500">Danger Zone</h2>
+          </div>
+          
+          <div className="bg-red-500/[0.02] border border-red-500/10 p-10 rounded-[3rem] flex flex-col md:flex-row items-center justify-between gap-8">
+             <div className="max-w-md">
+                <h3 className="font-black text-xl text-white mb-2 italic uppercase tracking-tight">Reset Business Data</h3>
+                <p className="text-white/40 text-sm leading-relaxed">
+                  Permanently delete all transactions, invoices, customers, and business settings. Your account stays active, but you'll start fresh.
+                </p>
+             </div>
+             <button 
+                onClick={() => setIsDeleteModalOpen(true)}
+                className="px-10 py-4 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white font-black rounded-2xl border border-red-500/20 transition-all active:scale-95 whitespace-nowrap"
+             >
+                Reset All Data
+             </button>
+          </div>
+        </section>
+      )}
 
       {/* Account Section */}
       <section className="pt-12 border-t border-white/5 flex items-center justify-between">
