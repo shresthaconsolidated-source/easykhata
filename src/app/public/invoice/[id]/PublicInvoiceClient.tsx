@@ -1,12 +1,9 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/contexts/AuthContext';
-import { ArrowLeft, Printer, MessageSquare, Link, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Printer, Download, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
-import { formatCurrency, cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 const numberToWords = (num: number) => {
   const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
@@ -34,11 +31,11 @@ const numberToWords = (num: number) => {
   if (num === 0) return 'Zero';
 
   let result = '';
-  if (num >= 10000000) { // Crores (South Asian) or just handle as Millions
+  if (num >= 10000000) {
     result += convertThreeDigits(Math.floor(num / 10000000)) + ' Crore ';
     num %= 10000000;
   }
-  if (num >= 100000) { // Lakhs
+  if (num >= 100000) {
     result += convertThreeDigits(Math.floor(num / 100000)) + ' Lakh ';
     num %= 100000;
   }
@@ -51,117 +48,73 @@ const numberToWords = (num: number) => {
   return result.trim();
 };
 
-export default function InvoiceDetailPage() {
-  const { id } = useParams();
-  const router = useRouter();
-  const { user } = useAuth();
-  const searchParams = useSearchParams();
-  const [loading, setLoading] = useState(true);
-  const [invoice, setInvoice] = useState<any>(null);
-  const [items, setItems] = useState<any[]>([]);
-  const [company, setCompany] = useState<any>(null);
-  const [copied, setCopied] = useState(false);
+export default function PublicInvoiceClient({ invoice, items, company }: { invoice: any, items: any[], company: any }) {
+  const [downloading, setDownloading] = useState(false);
 
-  useEffect(() => {
-    if (user && id) {
-      fetchInvoiceDetails();
-    }
-  }, [user, id]);
-
-  const fetchInvoiceDetails = async () => {
-    // 1. Fetch Invoice
-    const { data: invData, error: invError } = await supabase
-      .from('invoices')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (invError || !invData) {
-      console.error(invError);
-      return;
-    }
-    setInvoice(invData);
-
-    // 2. Fetch Items
-    const { data: itemData } = await supabase
-      .from('invoice_items')
-      .select('*')
-      .eq('invoice_id', id);
-    if (itemData) setItems(itemData);
-
-    // 3. Fetch Company
-    const { data: compData } = await supabase
-      .from('companies')
-      .select('*')
-      .eq('id', invData.company_id)
-      .single();
-    if (compData) setCompany(compData);
-
-    setLoading(false);
-
-    // Auto trigger print if requested
-    if (searchParams.get('print') === 'true') {
-      setTimeout(() => window.print(), 500);
-    }
+  const loadScript = (src: string) => {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) return resolve(true);
+      const script = document.createElement('script');
+      script.src = src;
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
   };
 
-  const handleWhatsAppShare = async () => {
-    if (!invoice || !company) return;
+  const handleDownloadPDF = async () => {
+    if (downloading) return;
+    setDownloading(true);
     
-    const url = `${window.location.origin}/public/invoice/${invoice.id}`;
-    const message = `Here is your invoice (*${invoice.invoice_number}*). Click here to view and download it securely:\n${url}\n\nPowered by easyKhata`;
-    
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isMobile && navigator.share) {
-      try {
-        await navigator.share({
-          title: `Invoice ${invoice.invoice_number}`,
-          text: `Here is your invoice from ${company.name}`,
-          url: url
-        });
-        return;
-      } catch (err) {
-        // Fallback to wa.me below
-      }
+    try {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+      
+      const html2canvas = (window as any).html2canvas;
+      const jsPDF = (window as any).jspdf.jsPDF;
+
+      const element = document.getElementById('invoice-document');
+      if (!element) throw new Error('Document not found');
+      
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfBlob = pdf.output('blob');
+      
+      const fileName = `Invoice-${invoice.invoice_number}.pdf`;
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      alert('Unable to generate PDF dynamically. Please try the "Print" button instead and save as PDF.');
+    } finally {
+      setDownloading(false);
     }
-    
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
   };
-
-  const handleCopyLink = () => {
-    if (!invoice) return;
-    const url = `${window.location.origin}/public/invoice/${invoice.id}`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  if (loading) return null;
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] md:p-8 print:p-0">
-      {/* Controls - Hidden on print */}
-      <div className="max-w-4xl mx-auto mb-8 flex items-center justify-between print:hidden">
-        <button 
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-white/40 hover:text-white transition-all font-medium"
-        >
-          <ArrowLeft className="w-5 h-5" /> Back to Invoices
-        </button>
+      <div className="max-w-4xl mx-auto mb-8 flex items-center justify-end print:hidden">
         <div className="flex gap-3">
           <button 
-            onClick={handleCopyLink}
-            className="bg-white/5 hover:bg-white/10 text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 font-bold transition-all border border-white/10 active:scale-95"
+            onClick={handleDownloadPDF}
+            disabled={downloading}
+            className="bg-[#1a5f7a] hover:bg-[#154d63] text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 font-bold transition-all shadow-lg active:scale-95 disabled:opacity-75 disabled:cursor-not-allowed"
           >
-            {copied ? <CheckCircle2 className="w-4 h-4 text-[#25D366]" /> : <Link className="w-4 h-4" />}
-            {copied ? 'Copied!' : 'Copy Link'}
-          </button>
-          <button 
-            onClick={handleWhatsAppShare}
-            className="bg-[#25D366] hover:bg-[#20b859] text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 font-bold transition-all shadow-lg active:scale-95"
-          >
-            <MessageSquare className="w-4 h-4" /> Share
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            {downloading ? 'Preparing PDF...' : 'Download PDF'}
           </button>
           <button 
             onClick={() => window.print()}
@@ -172,11 +125,9 @@ export default function InvoiceDetailPage() {
         </div>
       </div>
 
-      {/* The Invoice Document - Wrapped in horizontal scroll for mobile */}
       <div className="w-full overflow-x-auto pb-12 custom-scrollbar print:overflow-visible">
         <div id="invoice-document" className="max-w-[850px] min-w-[800px] md:min-w-[850px] mx-auto bg-white text-[#1a1f36] shadow-[0_64px_128px_-16px_rgba(0,0,0,0.1)] min-h-[1100px] flex flex-col font-sans print:shadow-none print:p-0 print:mx-0 print:w-full overflow-hidden rounded-sm">
         
-        {/* Top Branding Header */}
         <div className="bg-[#1a5f7a] p-12 text-white flex justify-between items-center">
            <div>
               <h1 className="text-6xl font-black tracking-tight uppercase opacity-90">Invoice</h1>
@@ -192,7 +143,6 @@ export default function InvoiceDetailPage() {
         </div>
 
         <div className="p-16 flex-1 flex flex-col">
-          {/* Metadata & Billing */}
           <div className="grid grid-cols-2 gap-20 mb-20">
              <div className="space-y-4">
                 <div className="space-y-1">
@@ -220,7 +170,6 @@ export default function InvoiceDetailPage() {
              </div>
           </div>
 
-          {/* Items Table */}
           <div className="flex-1">
              <table className="w-full border-collapse">
                 <thead>
@@ -246,10 +195,8 @@ export default function InvoiceDetailPage() {
              </table>
           </div>
 
-          {/* Totals Section */}
           <div className="mt-12 pt-8 border-t-2 border-[#f1f5f9]">
              <div className="flex items-start justify-between">
-                {/* In Words - Left Side */}
                 <div className="max-w-[450px]">
                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#a3acb9] mb-1">In Words</p>
                    <p className="text-sm font-bold text-[#1a5f7a] italic leading-tight">
@@ -257,7 +204,6 @@ export default function InvoiceDetailPage() {
                    </p>
                 </div>
 
-                {/* Totals Breakdown - Right Side */}
                 <div className="w-full max-w-[320px] space-y-4">
                    <div className="flex justify-between text-sm text-[#4f566b] font-bold px-6">
                       <span>Subtotal</span>
@@ -280,7 +226,6 @@ export default function InvoiceDetailPage() {
           </div>
         </div>
 
-        {/* Branding Footer */}
         <div className="bg-[#1a5f7a] p-8 text-white text-center">
            <p className="text-sm font-black uppercase tracking-widest opacity-90">Thank you for your business!</p>
         </div>
