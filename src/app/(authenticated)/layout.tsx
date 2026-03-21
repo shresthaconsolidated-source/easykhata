@@ -19,10 +19,10 @@ function AuthenticatedContent({ children, pathname }: { children: React.ReactNod
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (!authLoading && !companyLoading && !company && pathname !== '/onboarding') {
+    if (!authLoading && user && !companyLoading && !company && pathname !== '/onboarding') {
       router.push('/onboarding');
     }
-  }, [company, companyLoading, authLoading, pathname, router]);
+  }, [user, company, companyLoading, authLoading, pathname, router]);
 
   if (authLoading || companyLoading) {
     return (
