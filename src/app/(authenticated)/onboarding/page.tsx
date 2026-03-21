@@ -190,8 +190,8 @@ export default function OnboardingPage() {
         </form>
 
         <button 
-          onClick={() => {
-            signOut();
+          onClick={async () => {
+            await signOut();
             router.push('/');
           }}
           className="w-full flex items-center justify-center gap-2 py-4 text-white/20 hover:text-white/40 font-bold uppercase tracking-[0.2em] text-[10px] transition-all group"

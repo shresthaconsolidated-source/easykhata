@@ -111,8 +111,8 @@ export default function SettingsPage() {
 
       if (error) throw error;
       
-      // Redirect to onboarding
-      router.push('/onboarding');
+      // Redirect to home page
+      router.push('/');
     } catch (err: any) {
       alert(`Error resetting data: ${err.message}`);
     }

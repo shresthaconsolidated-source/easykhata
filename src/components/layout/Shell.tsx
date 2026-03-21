@@ -169,7 +169,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
               </button>
             
             <button 
-              onClick={signOut}
+              onClick={async () => {
+                await signOut();
+                router.push('/');
+              }}
               className="flex items-center gap-2 w-full px-4 py-3 text-white/20 hover:text-red-400 hover:bg-red-500/5 rounded-2xl transition-all text-xs font-bold uppercase tracking-widest justify-center"
             >
               <LogOut className="w-4 h-4" />
