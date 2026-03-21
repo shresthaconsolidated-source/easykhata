@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import { Shell } from '@/components/layout/Shell';
 import { supabase } from '@/lib/supabase';
-import { CompanyProvider, useCompany } from '@/contexts/CompanyContext';
+import { useCompany } from '@/contexts/CompanyContext';
 
 function AuthenticatedContent({ children, pathname }: { children: React.ReactNode, pathname: string }) {
   const { user, loading: authLoading } = useAuth();
@@ -55,10 +55,8 @@ export default function AuthenticatedLayout({
   const pathname = usePathname();
 
   return (
-    <CompanyProvider>
-      <AuthenticatedContent pathname={pathname}>
-        {children}
-      </AuthenticatedContent>
-    </CompanyProvider>
+    <AuthenticatedContent pathname={pathname}>
+      {children}
+    </AuthenticatedContent>
   );
 }

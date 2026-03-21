@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { CompanyProvider } from "@/contexts/CompanyContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -36,7 +37,9 @@ export default function RootLayout({
     <html lang="en" className="dark scroll-smooth" suppressHydrationWarning>
       <body className={`${inter.className} bg-[#050505] text-white antialiased`}>
         <AuthProvider>
-          {children}
+          <CompanyProvider>
+            {children}
+          </CompanyProvider>
         </AuthProvider>
         <script
           dangerouslySetInnerHTML={{
