@@ -306,20 +306,35 @@ export default function ChatPage() {
       isCredit = false;
     }
 
-    const potentialCategoryName = (!category && matchedKeywordCategory) 
+    let finalCategory = category;
+    let finalCategoryName = category?.name || 'Other';
+    let finalPotentialCategory = (!category && matchedKeywordCategory) 
       ? matchedKeywordCategory 
       : (!category && text.split(' ').length > 0) 
         ? text.split(' ')[0] 
         : null;
+
+    if (itemName) {
+      const targetCatName = type === 'income' ? 'Sales' : 'Supplies';
+      const matchedCat = categories.find(c => c.name.toLowerCase() === targetCatName.toLowerCase());
+      if (matchedCat) {
+        finalCategory = matchedCat;
+        finalCategoryName = matchedCat.name;
+        finalPotentialCategory = null;
+      } else {
+        finalCategoryName = targetCatName;
+        finalPotentialCategory = targetCatName;
+      }
+    }
 
     return {
       amount: foundAmount,
       quantity: foundQuantity,
       type,
       date,
-      categoryId: category?.id || null,
-      categoryName: category?.name || 'Other',
-      potentialCategoryName: potentialCategoryName,
+      categoryId: finalCategory?.id || null,
+      categoryName: finalCategoryName,
+      potentialCategoryName: finalPotentialCategory,
       partyName: partyName,
       itemName: itemName,
       paymentStatus: isCredit ? 'unpaid' : 'paid',
