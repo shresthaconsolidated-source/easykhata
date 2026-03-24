@@ -431,15 +431,25 @@ export default function ChatPage() {
         }
       }
 
-      let finalItemId = null;
+      let finalItemId: string | null = null;
       if (data.itemName) {
         const existingItem = inventoryItems.find(i => i.name.toLowerCase() === data.itemName.toLowerCase());
+        const unitPrice = data.amount / (data.quantity || 1);
+
         if (existingItem) {
           finalItemId = existingItem.id;
+          // Update the latest price/cost for reference
+          const updateData = data.type === 'income' ? { price: unitPrice } : { cost: unitPrice };
+          await supabase.from('inventory_items').update(updateData).eq('id', finalItemId);
+          setInventoryItems(prev => prev.map(i => i.id === finalItemId ? { ...i, ...updateData } : i));
         } else {
-          const { data: newItem, error: iErr } = await supabase.from('inventory_items').insert({
-            company_id: company.id, name: data.itemName, stock_quantity: 0
-          }).select().single();
+          const insertData = {
+            company_id: company.id, 
+            name: data.itemName, 
+            stock_quantity: 0,
+            ...(data.type === 'income' ? { price: unitPrice } : { cost: unitPrice })
+          };
+          const { data: newItem, error: iErr } = await supabase.from('inventory_items').insert(insertData).select().single();
           if (!iErr && newItem) {
             finalItemId = newItem.id;
             setInventoryItems(prev => [...prev, newItem]);
