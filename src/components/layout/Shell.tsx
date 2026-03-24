@@ -14,7 +14,9 @@ import {
   X,
   Plus,
   LogOut,
-  Shield
+  Shield,
+  Users,
+  Package
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -32,6 +34,8 @@ const navItems = [
   { name: 'P&L', href: '/pl', icon: BarChart3 },
   { name: 'Invoices', href: '/invoices', icon: FileText },
   { name: 'Transactions', href: '/transactions', icon: ArrowLeftRight },
+  { name: 'Settlements', href: '/receivables-payables', icon: Users },
+  { name: 'Inventory', href: '/inventory', icon: Package },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

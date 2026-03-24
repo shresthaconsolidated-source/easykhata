@@ -16,8 +16,11 @@ import {
   Package,
   Zap,
   ArrowRight,
-  MessageCircle
+  MessageCircle,
+  Plus,
+  Users
 } from 'lucide-react';
+import TransactionModal from '@/components/TransactionModal';
 import { cn, formatCurrency } from '@/lib/utils';
 
 interface Message {
@@ -39,6 +42,9 @@ export default function ChatPage() {
   const [pendingTransaction, setPendingTransaction] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [parties, setParties] = useState<any[]>([]);
+  const [inventoryItems, setInventoryItems] = useState<any[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const [quickActions, setQuickActions] = useState<any[]>([
     { label: "Purchased Raw Materials 25000", icon: Zap },
@@ -51,8 +57,18 @@ export default function ChatPage() {
     if (user && company) {
       fetchCategories(company.id);
       fetchQuickActions(company.id);
+      fetchPartiesAndItems(company.id);
     }
   }, [user, company]);
+
+  const fetchPartiesAndItems = async (companyId: string) => {
+    const [pRes, iRes] = await Promise.all([
+      supabase.from('parties').select('*').eq('company_id', companyId),
+      supabase.from('inventory_items').select('*').eq('company_id', companyId)
+    ]);
+    if (pRes.data) setParties(pRes.data);
+    if (iRes.data) setInventoryItems(iRes.data);
+  };
 
   const fetchQuickActions = async (companyId: string) => {
     const { data } = await supabase
@@ -163,36 +179,45 @@ export default function ChatPage() {
        foundQuantity = Math.min(...numbers);
     }
 
-    // 3. Type Detection — English + Nepali Romanized
+    // 3. Type Detection — English + Nepali Romanized + Devnagari
     let type: 'income' | 'expense' = 'expense';
-    if (
-      // English income words
-      lowerText.includes('received') || lowerText.includes('income') ||
-      lowerText.includes('sold') || lowerText.includes('sale') ||
-      lowerText.includes('profit') || lowerText.includes('earned') ||
-      lowerText.includes('plus') || lowerText.includes('salary') ||
-      lowerText.includes('sales') || lowerText.includes('revenue') ||
-      lowerText.includes('wholesale') || lowerText.includes('b2b') ||
-      // Nepali Romanized income words
-      lowerText.includes('bechyo') || lowerText.includes('bechi') ||  // sold
-      lowerText.includes('paisa aayo') || lowerText.includes('aayo') ||  // money came
-      lowerText.includes('milyo') || lowerText.includes('miliyo') ||  // received
-      lowerText.includes('tiryo') || lowerText.includes('payment aayo')    // received payment
-    ) {
+    
+    // Check for explicit expense words first (to override defaults)
+    const expenseWords = [
+      'bought', 'buy', 'purchase', 'paid', 'spend', 'spent', 'expense', 'minus', 'cost', // English
+      'kinyo', 'kine', 'kharcha', 'gayo', 'tire', 'tiryo', 'tirxu', 'khrcha', // Nepali Romanized
+      'खर्च', 'किन्यो', 'किने', 'गयो', 'तिरे', 'तिर्यो' // Devnagari
+    ];
+    
+    // Check for explicit income words
+    const incomeWords = [
+      'received', 'income', 'sold', 'sale', 'profit', 'earned', 'plus', 'salary', 'sales', 'revenue', 'wholesale', 'b2b', // English
+      'bechyo', 'bechi', 'beche', 'aayo', 'paisa aayo', 'milyo', 'miliyo', 'kamai', 'aamdani', 'bikin', // Nepali Romanized
+      'बिक्री', 'आय', 'आम्दानी', 'आयो', 'बिक्यो', 'बेचे', 'मुनाफा', 'कमाई', 'मिल्यो' // Devnagari
+    ];
+
+    if (incomeWords.some(w => lowerText.includes(w))) {
       type = 'income';
+    } else if (expenseWords.some(w => lowerText.includes(w))) {
+      type = 'expense';
+    } else {
+      // Default fallback logic based on contextual context if no explicit words are found
+      // If there's an '@' party and unit price but no buy/sell, maybe it's income by default for 'easyKhata' (ledger)
+      // We will keep 'expense' as the ultimate fallback if nothing matches.
+      type = 'expense';
     }
 
-    // 4. Smart Date Detection — English + Nepali
+    // 4. Smart Date Detection — English + Nepali (Romanized/Devnagari)
     let date = format(new Date(), 'yyyy-MM-dd');
     const now = new Date();
     
-    if (lowerText.includes('yesterday') || lowerText.includes('hijo')) {
+    if (lowerText.includes('yesterday') || lowerText.includes('hijo') || lowerText.includes('हिजो')) {
       date = format(subDays(now, 1), 'yyyy-MM-dd');
-    } else if (lowerText.includes('day before yesterday') || lowerText.includes('asti')) {
+    } else if (lowerText.includes('day before yesterday') || lowerText.includes('asti') || lowerText.includes('अस्ती')) {
       date = format(subDays(now, 2), 'yyyy-MM-dd');
-    } else if (lowerText.includes('last month') || lowerText.includes('asina mahina')) {
+    } else if (lowerText.includes('last month') || lowerText.includes('asina mahina') || lowerText.includes('अघिल्लो महिना')) {
       date = format(subDays(now, 30), 'yyyy-MM-dd');
-    } else if (lowerText.includes('last week') || lowerText.includes('asina hafta')) {
+    } else if (lowerText.includes('last week') || lowerText.includes('asina hafta') || lowerText.includes('अघिल्लो हप्ता')) {
       date = format(subDays(now, 7), 'yyyy-MM-dd');
     }
 
@@ -205,38 +230,38 @@ export default function ChatPage() {
     if (!category) {
       const keywordMap: Record<string, string> = {
         // --- English ---
-        'taxi': 'Travel', 'bus': 'Travel', 'fuel': 'Travel', 'petrol': 'Travel',
-        'ride': 'Travel', 'uber': 'Travel', 'pathao': 'Travel',
+        'taxi': 'Travel', 'bus': 'Travel', 'fuel': 'Travel', 'petrol': 'Travel', 'ticket': 'Travel',
+        'ride': 'Travel', 'uber': 'Travel', 'pathao': 'Travel', 'flight': 'Travel',
         'food': 'Meals', 'dinner': 'Meals', 'lunch': 'Meals', 'breakfast': 'Meals',
         'restaurant': 'Meals', 'momo': 'Meals', 'burger': 'Meals', 'chicken': 'Meals',
         'rent': 'Housing', 'electricity': 'Utilities', 'water': 'Utilities',
-        'internet': 'Utilities', 'wifi': 'Utilities',
+        'internet': 'Utilities', 'wifi': 'Utilities', 'recharge': 'Utilities', 'topup': 'Utilities',
         'salary': 'Salary', 'sold': 'Sales', 'sale': 'Sales', 'sales': 'Sales',
         'bonus': 'Bonus', 'inventory': 'Supplies', 'stock': 'Supplies',
         'candle': 'Supplies', 'khaja': 'Meals',
         'cogs': 'Supplies', 'materials': 'Supplies', 'raw materials': 'Supplies',
         'wholesale': 'Sales', 'revenue': 'Sales', 'consulting': 'Sales',
         // --- Nepali Romanized ---
-        // Travel
         'gadi': 'Travel', 'sawa': 'Travel', 'tempo': 'Travel', 'auto': 'Travel',
-        'microbus': 'Travel', 'sajha': 'Travel', 'yatayat': 'Travel',
-        // Food / Meals
+        'microbus': 'Travel', 'sajha': 'Travel', 'yatayat': 'Travel', 'bato': 'Travel',
         'khana': 'Meals', 'bhojan': 'Meals', 'nasto': 'Meals', 'tarkari': 'Meals',
         'sabji': 'Meals', 'daal': 'Meals', 'bhat': 'Meals', 'roti': 'Meals',
-        'piro': 'Meals', 'mithai': 'Meals', 'chiya': 'Meals',  // tea
-        // Groceries / Supplies
-        'alu': 'Supplies', 'pyaj': 'Supplies', 'chini': 'Supplies',
+        'piro': 'Meals', 'mithai': 'Meals', 'chiya': 'Meals', 'chowmein': 'Meals',
+        'alu': 'Supplies', 'pyaj': 'Supplies', 'chini': 'Supplies', 'नून': 'Supplies',
         'tel': 'Supplies', 'maida': 'Supplies', 'chamal': 'Supplies',
-        'sabun': 'Supplies', 'saman': 'Supplies',  // goods/items
-        // Sales / Income
-        'bechyo': 'Sales', 'bechi': 'Sales', 'bechna': 'Sales',
-        'bikri': 'Sales',  // sale
-        // Housing
-        'bhada': 'Housing', 'kotha': 'Housing',  // rent, room
-        // Utilities
-        'bijuli': 'Utilities', 'paani': 'Utilities',
-        // Salary
-        'tankha': 'Salary', 'mahina': 'Salary',
+        'sabun': 'Supplies', 'saman': 'Supplies', 'mal': 'Supplies',
+        'bechyo': 'Sales', 'bechi': 'Sales', 'bechna': 'Sales', 'bikri': 'Sales',
+        'bhada': 'Housing', 'kotha': 'Housing', 'ghar': 'Housing',
+        'bijuli': 'Utilities', 'paani': 'Utilities', 'balans': 'Utilities',
+        'tankha': 'Salary', 'mahina': 'Salary', 'jyala': 'Salary', 'talab': 'Salary', 'kamdar': 'Salary',
+        // --- Devnagari ---
+        'बस': 'Travel', 'गाडी': 'Travel', 'पेट्रोल': 'Travel', 'भाडा': 'Travel', 'ट्याक्सी': 'Travel',
+        'खाना': 'Meals', 'खाजा': 'Meals', 'तरकारी': 'Meals', 'चिया': 'Meals', 'मोमो': 'Meals',
+        'कोठा': 'Housing', 'घर': 'Housing',
+        'बिजुली': 'Utilities', 'पानी': 'Utilities', 'इन्टरनेट': 'Utilities',
+        'तलब': 'Salary', 'ज्याला': 'Salary', 'महिना': 'Salary',
+        'सामान': 'Supplies', 'चामल': 'Supplies', 'तेल': 'Supplies', 'चिनी': 'Supplies',
+        'बिक्री': 'Sales', 'व्यापार': 'Sales'
       };
 
       for (const [kw, catName] of Object.entries(keywordMap)) {
@@ -248,10 +273,37 @@ export default function ChatPage() {
       }
     }
 
-    // 6. Unit Price Logic — English + Nepali units
-    const perUnitWords = ['each', '/', 'per', 'ko', 'ma', 'ek'];
+    // 6. Unit Price Logic — English + Nepali units + Devnagari
+    const perUnitWords = ['each', '/', 'per', 'ko', 'ma', 'ek', 'goti', 'jana', 'प्रति', 'को'];
     if (perUnitWords.some(w => lowerText.includes(w)) && foundQuantity > 1) {
        foundAmount = foundAmount * foundQuantity;
+    }
+
+    // 7. AR / AP & Inventory Detection (@ and #)
+    let partyNameMatch = text.match(/@(\w+)/);
+    let partyName = partyNameMatch ? partyNameMatch[1] : null;
+    // Allow non-english word characters for Devnagari names/items using broader matcher if possible,
+    // but word boundary \w+ only matches A-Za-z0-9_. We will use \S+ to match until space for unicode.
+    let partyNameUnicodeMatch = text.match(/@([^\s,;]+)/);
+    partyName = partyNameUnicodeMatch ? partyNameUnicodeMatch[1] : partyName;
+    
+    let itemNameMatch = text.match(/#([^\s,;]+)/);
+    let itemName = itemNameMatch ? itemNameMatch[1] : null;
+
+    let isCredit = false;
+    const creditWords = ['credit', 'udharo', 'baki', 'receivable', 'payable', 'due', 'later', 'baaki', 'linu chha', 'dinu chha', 'उधारो', 'बाँकी', 'दिनु छ', 'लिनु छ'];
+    if (creditWords.some(w => lowerText.includes(w)) || partyName) {
+      isCredit = true; 
+    }
+    const paidWords = ['paid', 'cash', 'settled', 'clear', 'cashma', 'haatma', 'tiryo', 'nagad', 'नगद', 'तिर्यो', 'तिरे'];
+    if (paidWords.some(w => lowerText.includes(w)) && !partyName) {
+      // Only clear credit if there is NO explicit @party attached, 
+      // or if they say "@Ram paid 500" - in that case it IS paid.
+      isCredit = false;
+    }
+    if (paidWords.some(w => lowerText.includes(w)) && partyName) {
+      // If payment from/to party, mark as paid. (e.g., "Received 500 cash from @Ram" -> settles balance)
+      isCredit = false;
     }
 
     const potentialCategoryName = (!category && matchedKeywordCategory) 
@@ -268,7 +320,10 @@ export default function ChatPage() {
       categoryId: category?.id || null,
       categoryName: category?.name || 'Other',
       potentialCategoryName: potentialCategoryName,
-      note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today|day before|at|for|last|month|week|each|bechyo|bechi|garyo|kinyo|aayo|hijo|asti/gi, '').trim()
+      partyName: partyName,
+      itemName: itemName,
+      paymentStatus: isCredit ? 'unpaid' : 'paid',
+      note: text.replace(/\d+/g, '').replace(/spent|received|income|expense|yesterday|today|day before|at|for|last|month|week|each|bechyo|bechi|garyo|kinyo|aayo|hijo|asti/gi, '').replace(/@\w+/g, '').replace(/#\w+/g, '').trim()
     };
   };
 
@@ -345,6 +400,38 @@ export default function ChatPage() {
     setLoading(true);
 
     try {
+      let finalPartyId = null;
+      if (data.partyName) {
+        const existingParty = parties.find(p => p.name.toLowerCase() === data.partyName.toLowerCase());
+        if (existingParty) {
+          finalPartyId = existingParty.id;
+        } else {
+          const { data: newParty, error: pErr } = await supabase.from('parties').insert({
+            company_id: company.id, name: data.partyName, type: data.type === 'income' ? 'customer' : 'supplier'
+          }).select().single();
+          if (!pErr && newParty) {
+            finalPartyId = newParty.id;
+            setParties(prev => [...prev, newParty]);
+          }
+        }
+      }
+
+      let finalItemId = null;
+      if (data.itemName) {
+        const existingItem = inventoryItems.find(i => i.name.toLowerCase() === data.itemName.toLowerCase());
+        if (existingItem) {
+          finalItemId = existingItem.id;
+        } else {
+          const { data: newItem, error: iErr } = await supabase.from('inventory_items').insert({
+            company_id: company.id, name: data.itemName, stock_quantity: 0
+          }).select().single();
+          if (!iErr && newItem) {
+            finalItemId = newItem.id;
+            setInventoryItems(prev => [...prev, newItem]);
+          }
+        }
+      }
+
       const { error } = await supabase
         .from('transactions')
         .insert({
@@ -355,7 +442,10 @@ export default function ChatPage() {
           amount: data.amount,
           quantity: data.quantity || 1,
           type: data.type,
-          date: data.date
+          date: data.date,
+          party_id: finalPartyId,
+          inventory_item_id: finalItemId,
+          payment_status: data.paymentStatus || 'paid'
         });
 
       if (error) {
@@ -512,7 +602,14 @@ export default function ChatPage() {
                            <Package className="w-3.5 h-3.5" />
                            <span>Quantity</span>
                         </div>
-                        <p className="font-black text-sm text-white/80 uppercase tracking-tight">{msg.data.quantity || 1}</p>
+                        <input 
+                          type="number"
+                          min="0.01"
+                          step="any"
+                          value={msg.data.quantity || 1}
+                          onChange={(e) => setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, data: { ...m.data, quantity: parseFloat(e.target.value) || '' } } : m))}
+                          className="bg-white/[0.02] border border-white/5 rounded-lg px-3 py-1 text-sm font-black text-white/80 focus:border-white/20 outline-none transition-all w-24"
+                        />
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -577,7 +674,49 @@ export default function ChatPage() {
                     </div>
                   </div>
 
-                    <div className="flex items-center justify-between">
+                  {/* AR/AP and Inventory Display Context */}
+                  {(msg.data.partyName || msg.data.itemName || msg.data.paymentStatus === 'unpaid') && (
+                    <div className="flex gap-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5 relative z-10 w-full overflow-hidden">
+                      {msg.data.partyName && (
+                        <div className="flex-1 space-y-1 border-r border-white/10 pr-4">
+                          <div className="flex items-center gap-1.5 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
+                             <Users className="w-3.5 h-3.5"/>
+                             <span>Contact</span>
+                          </div>
+                          <p className="font-bold text-white/90 text-sm">@{msg.data.partyName}</p>
+                          <p className="text-[9px] font-bold text-white/40 uppercase mt-1">
+                            {msg.data.paymentStatus === 'unpaid' ? (
+                              <span className="text-amber-400">On Credit</span>
+                            ) : (
+                              <span className="text-blue-400">Cash/Paid</span>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {!msg.data.partyName && msg.data.paymentStatus === 'unpaid' && (
+                        <div className="flex-1 space-y-1 border-r border-white/10 pr-4">
+                          <div className="flex items-center gap-1.5 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
+                             <Users className="w-3.5 h-3.5"/>
+                             <span>Status</span>
+                          </div>
+                          <p className="font-bold text-amber-400/90 text-sm italic">Unpaid / Due</p>
+                        </div>
+                      )}
+
+                      {msg.data.itemName && (
+                        <div className="flex-1 space-y-1 pl-2">
+                          <div className="flex items-center gap-1.5 text-white/30 text-[9px] font-black uppercase tracking-[0.2em]">
+                             <Package className="w-3.5 h-3.5"/>
+                             <span>Inventory</span>
+                          </div>
+                          <p className="font-bold text-blue-400 text-sm">#{msg.data.itemName}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <CalendarIcon className="w-4 h-4 text-white/20" />
                         <span className="text-[13px] font-medium">{format(new Date(msg.data.date), 'MMM dd, yyyy')}</span>
@@ -622,29 +761,42 @@ export default function ChatPage() {
         <div className="relative group max-w-xl mx-auto">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-500"></div>
           <div className="relative flex flex-col gap-3 lg:gap-4">
-            <div className="flex-1 bg-white/[0.03] backdrop-blur-2xl rounded-2xl border border-white/10 group-focus-within:border-blue-500/50 group-focus-within:bg-white/[0.05] transition-all shadow-2xl overflow-hidden flex items-center pr-4">
-              <input 
-                type="text" 
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Type an expense or income..."
-                className="flex-1 bg-transparent px-4 lg:px-6 py-4 lg:py-5 text-sm font-semibold outline-none placeholder:text-white/10 text-white"
-              />
+            <div className="flex items-center gap-2">
               <button 
-                onClick={handleSend}
-                className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center hover:bg-blue-500 hover:scale-105 transition-all active:scale-95 shadow-lg shadow-blue-500/40 group/btn"
+                onClick={() => setIsModalOpen(true)}
+                className="w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 hover:border-white/20 transition-all shadow-lg active:scale-95 flex-shrink-0"
               >
-                <div className="relative">
-                  <div className="absolute inset-0 bg-white blur-lg opacity-0 group-hover/btn:opacity-20" />
-                  <Send className="w-5 h-5 text-white relative z-10" />
-                </div>
+                <Plus className="w-5 h-5 text-white/70" />
               </button>
+              <div className="flex-1 bg-white/[0.03] backdrop-blur-2xl rounded-2xl border border-white/10 group-focus-within:border-blue-500/50 group-focus-within:bg-white/[0.05] transition-all shadow-2xl overflow-hidden flex items-center pr-4">
+                <input 
+                  type="text" 
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                  placeholder="Type an expense, income, @contact or #item..."
+                  className="flex-1 bg-transparent w-full px-4 lg:px-6 py-4 lg:py-5 text-sm font-semibold outline-none placeholder:text-white/20 text-white"
+                />
+                <button 
+                  onClick={handleSend}
+                  className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center hover:bg-blue-500 hover:scale-105 transition-all active:scale-95 shadow-lg shadow-blue-500/40 group/btn"
+                >
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-white blur-lg opacity-0 group-hover/btn:opacity-20" />
+                    <Send className="w-5 h-5 text-white relative z-10" />
+                  </div>
+                </button>
+              </div>
             </div>
-            <div className="flex gap-4 px-4 lg:px-6 text-[8px] lg:text-[9px] font-bold uppercase tracking-[0.2em] text-white/10">
-               <span>Examples:</span>
-               <span className="text-white/20 italic">"Inventory 15000"</span>
-               <span className="text-white/20 italic">"Wholesale 25000"</span>
+            <div className="flex flex-col lg:flex-row gap-2 lg:gap-4 px-4 lg:px-6 text-[8px] lg:text-[9px] font-bold uppercase tracking-[0.2em] text-white/10">
+               <div>
+                 <span>Examples: </span>
+                 <span className="text-white/20 italic">"Inventory 15000"</span>
+               </div>
+               <div className="flex gap-3">
+                 <span className="text-blue-400/60 font-black"><span className="text-white/40 font-normal opacity-50">Type</span> @Name <span className="text-white/40 font-normal opacity-50">for Credit</span></span>
+                 <span className="text-green-400/60 font-black"><span className="text-white/40 font-normal opacity-50">Type</span> #Item <span className="text-white/40 font-normal opacity-50">for Stock</span></span>
+               </div>
             </div>
           </div>
         </div>
@@ -653,6 +805,23 @@ export default function ChatPage() {
         </p>
       </div>
     </div>
+
+    <TransactionModal 
+      isOpen={isModalOpen}
+      onClose={() => setIsModalOpen(false)}
+      onSuccess={() => {
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          role: 'bot',
+          content: '✅ Transaction added successfully!',
+          timestamp: new Date(),
+          type: 'success'
+        }]);
+      }}
+      categories={categories}
+      parties={parties}
+      inventoryItems={inventoryItems}
+    />
   </div>
   );
 }

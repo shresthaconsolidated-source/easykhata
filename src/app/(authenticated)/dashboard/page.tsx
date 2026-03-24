@@ -79,7 +79,7 @@ export default function DashboardPage() {
       supabase.from('transactions').select('amount, type').eq('company_id', companyId).eq('date', today),
       supabase.from('transactions').select('amount, type, category_id, categories(name)').eq('company_id', companyId).gte('date', monthStart).lte('date', monthEnd),
       supabase.from('transactions').select('amount, type').eq('company_id', companyId).gte('date', prevMonthStart).lte('date', prevMonthEnd),
-      supabase.from('transactions').select('amount, type').eq('company_id', companyId),
+      supabase.from('transactions').select('amount, type, payment_status').eq('company_id', companyId),
       supabase.from('transactions').select('amount, type, date').eq('company_id', companyId).gte('date', sixMonthsAgo).lte('date', monthEnd)
     ]);
 
@@ -101,11 +101,14 @@ export default function DashboardPage() {
       }
     });
 
-    // 2. Process All-Time Balance
-    let totalInc = 0, totalExp = 0;
+    // 2. Process All-Time Balance (Cash Only)
+    let totalCashIn = 0, totalCashOut = 0;
     allTimeStats?.forEach(t => {
-      if (t.type === 'income') totalInc += Number(t.amount);
-      else totalExp += Number(t.amount);
+      // Only count if it's strictly 'paid' (or old rows without the column)
+      if (t.payment_status === 'paid' || !t.payment_status) {
+        if (t.type === 'income') totalCashIn += Number(t.amount);
+        else totalCashOut += Number(t.amount);
+      }
     });
 
     // 3. Process Previous Month Stats
@@ -121,7 +124,7 @@ export default function DashboardPage() {
       monthIncome: mInc,
       monthExpense: mExp,
       netProfit: mInc - mExp,
-      totalBalance: totalInc - totalExp,
+      totalBalance: totalCashIn - totalCashOut,
       prevMonthIncome: pmInc,
       prevMonthExpense: pmExp,
       prevMonthProfit: pmInc - pmExp

@@ -89,8 +89,8 @@ export default function InsightsPage() {
       const incomeLast = lastMonth.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
       const expenseLast = lastMonth.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
 
-      const allIncome = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-      const allExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+      const allIncome = transactions.filter(t => t.type === 'income' && (!t.payment_status || t.payment_status === 'paid')).reduce((s, t) => s + Number(t.amount), 0);
+      const allExpense = transactions.filter(t => t.type === 'expense' && (!t.payment_status || t.payment_status === 'paid')).reduce((s, t) => s + Number(t.amount), 0);
 
       // Top Categories (Overview)
       const catMap: Record<string, number> = {};
